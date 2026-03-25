@@ -1,6 +1,6 @@
 #include "rendering_system_2d.h"
 #include "entity_manager.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 #include "core/math/vector2.h"
 #include "core/math/transform_2d.h"
 

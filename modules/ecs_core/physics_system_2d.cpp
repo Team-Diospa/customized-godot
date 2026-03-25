@@ -1,6 +1,6 @@
 #include "physics_system_2d.h"
 #include "entity_manager.h"
-#include "servers/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #include "core/math/transform_2d.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"

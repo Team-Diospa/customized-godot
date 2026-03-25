@@ -1,3 +1,4 @@
+#ifndef ECS_ENTITY_MANAGER_H
 #define ECS_ENTITY_MANAGER_H
 
 #include <cstdint>
@@ -32,20 +33,6 @@ struct ShaderDataComponent { float data[8]; };
 class EntityManager : public Object {
     GDCLASS(EntityManager, Object);
 
-public:
-    enum ComponentBit : uint64_t {
-        BIT_TRANSFORM = 1ULL << 0,
-        BIT_TRANSFORM_2D = 1ULL << 1,
-        BIT_PARENTS = 1ULL << 2,
-        BIT_PARENTS_2D = 1ULL << 3,
-        BIT_WORLD_TRANSFORM = 1ULL << 4,
-        BIT_WORLD_TRANSFORM_2D = 1ULL << 5,
-        BIT_AUDIO = 1ULL << 6,
-        BIT_INPUT = 1ULL << 7,
-        BIT_ANIMATION = 1ULL << 8,
-        BIT_SHADER_DATA = 1ULL << 9,
-    };
-
 private:
     static EntityManager *singleton;
     
@@ -62,6 +49,19 @@ protected:
     static void _bind_methods();
 
 public:
+    enum ComponentBit : uint64_t {
+        BIT_TRANSFORM = 1ULL << 0,
+        BIT_TRANSFORM_2D = 1ULL << 1,
+        BIT_PARENTS = 1ULL << 2,
+        BIT_PARENTS_2D = 1ULL << 3,
+        BIT_WORLD_TRANSFORM = 1ULL << 4,
+        BIT_WORLD_TRANSFORM_2D = 1ULL << 5,
+        BIT_AUDIO = 1ULL << 6,
+        BIT_INPUT = 1ULL << 7,
+        BIT_ANIMATION = 1ULL << 8,
+        BIT_SHADER_DATA = 1ULL << 9,
+    };
+
     static EntityManager *get_singleton();
 
     uint64_t create_entity();
@@ -115,6 +115,13 @@ public:
     SparseSet<T>* get_registry(const StringName &p_name) {
         if (registries.has(p_name)) {
             return static_cast<SparseSet<T>*>(registries[p_name]);
+        }
+        return nullptr;
+    }
+
+    ISparseSet* get_registry_untyped(const StringName &p_name) {
+        if (registries.has(p_name)) {
+            return registries[p_name];
         }
         return nullptr;
     }

@@ -2,7 +2,7 @@
 #define ECS_RENDERING_SYSTEM_2D_H
 
 #include "core/object/object.h"
-#include "core/templates/rid.h"
+#include "servers/rendering/rendering_server.h"
 #include "core/templates/vector.h"
 
 // High-performance 2D Canvas Batcher. 

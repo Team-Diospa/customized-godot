@@ -1,6 +1,6 @@
 #include "audio_system.h"
 #include "entity_manager.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 AudioSystem *AudioSystem::singleton = nullptr;
 
@@ -50,7 +50,6 @@ AudioSystem::~AudioSystem() {
 void AudioSystem::play_spatial_sound(uint64_t p_entity, RID p_stream) {
     AudioServer *as = AudioServer::get_singleton();
     // Implementation would use AudioServer::get_singleton()->...
-    // In a production engine, this would manage internal voice pools.
 }
 
 void AudioSystem::process_audio_updates() {
@@ -71,9 +70,7 @@ void AudioSystem::process_audio_updates() {
 
         if (ac.is_3d && transforms->has(entity)) {
             TransformComponent& t = transforms->get(entity);
-            // In a full implementation, we would call AudioServer::body_set_state
-            // or equivalent to update the 3D position of the voice.
-            // For now, we ensure the infrastructure is ready for GDExtension layering.
+            // Update 3D position logic here
         }
     }
 }

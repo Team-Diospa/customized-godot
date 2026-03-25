@@ -2,7 +2,7 @@
 #define ECS_PHYSICS_SYSTEM_2D_H
 
 #include "core/object/object.h"
-#include "core/math/vector2.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"
 

@@ -1,5 +1,6 @@
 #include "ecs_command_buffer.h"
 #include "entity_manager.h"
+#include "core/object/class_db.h"
 
 ECSCommandBuffer *ECSCommandBuffer::singleton = nullptr;
 
@@ -52,8 +53,7 @@ void ECSCommandBuffer::execute_deferred_commands() {
         if (cmd.type == CMD_DESTROY_ENTITY) {
             em->destroy_entity(cmd.entity_id);
         } else if (cmd.type == CMD_REMOVE_COMPONENT) {
-            // Evaluates targeted runtime structural Type Erasure removals purely dynamic
-            ISparseSet* reg = em->get_registry<void>(cmd.component_name); // Void cast logic bypass
+            ISparseSet* reg = em->get_registry_untyped(cmd.component_name);
             if (reg) {
                 reg->remove(cmd.entity_id);
             }

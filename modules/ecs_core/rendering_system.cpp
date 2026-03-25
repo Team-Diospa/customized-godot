@@ -1,6 +1,6 @@
 #include "rendering_system.h"
 #include "entity_manager.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 #include "core/variant/variant.h"
 #include "core/variant/packed_arrays.h"
 #include "simd_math.h"
