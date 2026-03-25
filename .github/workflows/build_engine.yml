@@ -32,7 +32,7 @@ jobs:
 
       - name: Compile Windows Export Template (Release)
         run: scons platform=windows target=template_release lto=full optimize=speed
-        
+
       - name: Upload Custom Godot Editor
         uses: actions/upload-artifact@v4
         with:
