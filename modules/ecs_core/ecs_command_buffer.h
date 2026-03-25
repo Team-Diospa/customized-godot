@@ -76,6 +76,5 @@ public:
 
 	ECSCommandBuffer();
 	~ECSCommandBuffer();
-};
 
-#endif // ECS_COMMAND_BUFFER_H
+};

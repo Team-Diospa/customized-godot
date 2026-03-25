@@ -32,7 +32,7 @@
 
 #include "entity_manager.h"
 #include "servers/audio/audio_server.h"
-#include "core/object/callable_method_pointer.h"
+#include "core/object/callable_mp.h"
 
 AudioSystem *AudioSystem::singleton = nullptr;
 

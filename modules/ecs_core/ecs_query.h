@@ -58,6 +58,3 @@ public:
 		}
 	}
 };
-} // namespace ecs
-
-#endif // ECS_QUERY_H
