@@ -36,21 +36,21 @@
 // Decouples OS input from ECS entities.
 // Essential for "Glitch horror" where the engine overrides player controls.
 class InputBufferSystem : public Object {
-    GDCLASS(InputBufferSystem, Object);
+	GDCLASS(InputBufferSystem, Object);
 
 private:
-    static InputBufferSystem *singleton;
-    bool input_locked = false;
+	static InputBufferSystem *singleton;
+	bool input_locked = false;
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    static InputBufferSystem *get_singleton();
+	static InputBufferSystem *get_singleton();
 
-    void lock_player_input(bool p_locked) { input_locked = p_locked; }
-    void process_input_buffer();
+	void lock_player_input(bool p_locked) { input_locked = p_locked; }
+	void process_input_buffer();
 
-    InputBufferSystem();
-    ~InputBufferSystem();
+	InputBufferSystem();
+	~InputBufferSystem();
 };

@@ -36,19 +36,19 @@
 // High-performance vertex/UV swapping system.
 // Allows massive Sprite2D/Mesh animations without AnimationPlayer overhead.
 class AnimationSystem : public Object {
-    GDCLASS(AnimationSystem, Object);
+	GDCLASS(AnimationSystem, Object);
 
 private:
-    static AnimationSystem *singleton;
+	static AnimationSystem *singleton;
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    static AnimationSystem *get_singleton();
+	static AnimationSystem *get_singleton();
 
-    void process_animation_updates(float p_delta);
+	void process_animation_updates(float p_delta);
 
-    AnimationSystem();
-    ~AnimationSystem();
+	AnimationSystem();
+	~AnimationSystem();
 };

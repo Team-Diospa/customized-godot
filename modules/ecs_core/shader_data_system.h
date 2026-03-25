@@ -35,19 +35,19 @@
 
 // Manages per-entity custom shader parameters (glitch, corruption, etc).
 class ShaderDataSystem : public Object {
-    GDCLASS(ShaderDataSystem, Object);
+	GDCLASS(ShaderDataSystem, Object);
 
 private:
-    static ShaderDataSystem *singleton;
+	static ShaderDataSystem *singleton;
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    static ShaderDataSystem *get_singleton();
+	static ShaderDataSystem *get_singleton();
 
-    void update_horrror_params();
+	void update_horrror_params();
 
-    ShaderDataSystem();
-    ~ShaderDataSystem();
+	ShaderDataSystem();
+	~ShaderDataSystem();
 };

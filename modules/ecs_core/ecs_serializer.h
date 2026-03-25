@@ -41,19 +41,19 @@
  * @brief Handles binary serialization of the entire ECS world state.
  */
 class ECSSerializer : public Object {
-    GDCLASS(ECSSerializer, Object);
+	GDCLASS(ECSSerializer, Object);
 
-    static ECSSerializer *singleton;
+	static ECSSerializer *singleton;
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    static ECSSerializer *get_singleton() { return singleton; }
+	static ECSSerializer *get_singleton() { return singleton; }
 
-    Error save_world(const String &p_path);
-    Error load_world(const String &p_path);
+	Error save_world(const String &p_path);
+	Error load_world(const String &p_path);
 
-    ECSSerializer();
-    ~ECSSerializer();
+	ECSSerializer();
+	~ECSSerializer();
 };

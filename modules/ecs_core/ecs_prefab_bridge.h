@@ -43,18 +43,18 @@
  * Parses PackedScenes and translates Nodes into optimized ECS Entity bundles.
  */
 class ECSPrefabBridge : public Object {
-    GDCLASS(ECSPrefabBridge, Object);
+	GDCLASS(ECSPrefabBridge, Object);
 
-    static ECSPrefabBridge *singleton;
+	static ECSPrefabBridge *singleton;
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    static ECSPrefabBridge *get_singleton() { return singleton; }
+	static ECSPrefabBridge *get_singleton() { return singleton; }
 
-    uint64_t spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_parent = 0);
-    
-    ECSPrefabBridge();
-    ~ECSPrefabBridge();
+	uint64_t spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_parent = 0);
+	
+	ECSPrefabBridge();
+	~ECSPrefabBridge();
 };
