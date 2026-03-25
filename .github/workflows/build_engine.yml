@@ -19,7 +19,10 @@ jobs:
           python-version: '3.x'
 
       - name: Install Configuration Tools
-        run: pip install scons
+        run: |
+          pip install scons
+          python misc/scripts/install_accesskit.py
+          python misc/scripts/install_d3d12_sdk_windows.py
 
       - name: Compile Godot Engine Editor (Tools)
         run: scons platform=windows target=editor lto=auto
