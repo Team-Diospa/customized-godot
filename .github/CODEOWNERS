@@ -120,6 +120,7 @@
 /modules/webp/                                @godotengine/asset-pipeline
 
 ## Network
+/modules/ecs_core/                             @godotengine/core
 /modules/enet/                                @godotengine/network
 /modules/enet/doc_classes/                    @godotengine/network @godotengine/documentation
 /modules/mbedtls/                             @godotengine/network
@@ -137,7 +138,6 @@
 /modules/websocket/editor/                    @godotengine/network @godotengine/editor
 
 ## Physics
-/modules/godot_physics_2d/                    @godotengine/physics
 /modules/godot_physics_3d/                    @godotengine/physics
 /modules/jolt_physics/                        @godotengine/physics @godotengine/jolt-physics
 

@@ -30,18 +30,14 @@
 
 #include "register_types.h"
 
-#include "modules/register_module_types.h"
-
+#include "animation_system.h"
+#include "audio_system.h"
 #include "ecs_command_buffer.h"
 #include "ecs_prefab_bridge.h"
-#include "ecs_serializer.h"
-#include "ecs_frame_allocator.h"
 #include "ecs_scheduler.h"
+#include "ecs_serializer.h"
 #include "entity_manager.h"
 #include "hierarchy_system.h"
-#include "physics_system.h"
-#include "rendering_system.h"
-
 // Phase 10 & 11 Integrations
 #include "animation_system.h"
 #include "audio_system.h"
