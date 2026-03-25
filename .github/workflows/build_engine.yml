@@ -1,0 +1,43 @@
+name: Build Custom Godot Engine
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Configuration Tools
+        run: pip install scons
+
+      - name: Compile Godot Engine Editor (Tools)
+        run: scons platform=windows target=editor lto=auto
+
+      - name: Compile Windows Export Template (Debug)
+        run: scons platform=windows target=template_debug lto=auto
+
+      - name: Compile Windows Export Template (Release)
+        run: scons platform=windows target=template_release lto=full optimize=speed
+        
+      - name: Upload Custom Godot Editor
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-editor-windows
+          path: bin/godot*editor*.exe
+
+      - name: Upload Windows Templates
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-windows-templates
+          path: bin/godot*.template_*.exe

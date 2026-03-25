@@ -1,0 +1,100 @@
+#include "ecs_prefab_bridge.h"
+#include "scene/main/node.h"
+#include "scene/3d/node_3d.h"
+#include "scene/2d/node_2d.h"
+#include "scene/3d/mesh_instance_3d.h"
+#include "scene/2d/sprite_2d.h"
+#include "core/object/object.h"
+#include "core/variant/variant.h"
+
+ECSPrefabBridge *ECSPrefabBridge::singleton = nullptr;
+
+void ECSPrefabBridge::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("spawn_from_scene", "scene", "parent"), &ECSPrefabBridge::spawn_from_scene, DEFVAL(0));
+}
+
+ECSPrefabBridge::ECSPrefabBridge() {
+    singleton = this;
+}
+
+ECSPrefabBridge::~ECSPrefabBridge() {
+    if (singleton == this) singleton = nullptr;
+}
+
+// Add a recursive helper function to handle the scene tree
+void _process_node_recursive(Node *p_node, uint64_t p_parent_entity) {
+    if (!p_node) return;
+
+    EntityManager *em = EntityManager::get_singleton();
+    uint64_t current_entity = em->create_entity();
+
+    // Map Parent
+    if (p_parent_entity != 0) {
+        if (Node3D *n3d = Object::cast_to<Node3D>(p_node)) {
+            ParentComponent pcomp;
+            pcomp.parent_id = p_parent_entity;
+            pcomp.local_x = n3d->get_position().x;
+            pcomp.local_y = n3d->get_position().y;
+            pcomp.local_z = n3d->get_position().z;
+            em->add_component(current_entity, pcomp);
+            
+            WorldTransformComponent w; // World Transform will be resolved by HierarchySystem
+            em->add_component(current_entity, w);
+        } else if (Node2D *n2d = Object::cast_to<Node2D>(p_node)) {
+            Parent2DComponent pcomp;
+            pcomp.parent_id = p_parent_entity;
+            pcomp.local_x = n2d->get_position().x;
+            pcomp.local_y = n2d->get_position().y;
+            em->add_component(current_entity, pcomp);
+            
+            WorldTransform2DComponent w;
+            em->add_component(current_entity, w);
+        }
+    }
+
+    // Map Components based on Node type
+    if (MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(p_node)) {
+         // Logic for MeshComponent here (Phase 1 to 5)
+    } else if (Sprite2D *s2d = Object::cast_to<Sprite2D>(p_node)) {
+         // Transform already handled by Parent check, adding rendering bits
+    }
+
+    // Recurse to children
+    for (int i = 0; i < p_node->get_child_count(); i++) {
+        _process_node_recursive(p_node->get_child(i), current_entity);
+    }
+}
+
+uint64_t ECSPrefabBridge::spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_parent) {
+    if (p_scene.is_null()) return 0;
+
+    Node *root = p_scene->instantiate();
+    if (!root) return 0;
+
+    EntityManager *em = EntityManager::get_singleton();
+    uint64_t root_entity = em->create_entity();
+
+    // Handle initial transform
+    if (Node3D *n3d = Object::cast_to<Node3D>(root)) {
+        TransformComponent t;
+        t.x = n3d->get_position().x;
+        t.y = n3d->get_position().y;
+        t.z = n3d->get_position().z;
+        em->add_component(root_entity, t);
+    } else if (Node2D *n2d = Object::cast_to<Node2D>(root)) {
+        Transform2DComponent t;
+        t.x = n2d->get_position().x;
+        t.y = n2d->get_position().y;
+        em->add_component(root_entity, t);
+    }
+
+    // Process children recursively
+    for (int i = 0; i < root->get_child_count(); i++) {
+        _process_node_recursive(root->get_child(i), root_entity);
+    }
+
+    // Cleanup the temporary scene instance
+    root->queue_free();
+
+    return root_entity;
+}

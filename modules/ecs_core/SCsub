@@ -1,0 +1,4 @@
+# SCsub - ecs_core SCons script
+Import('env')
+
+env.add_source_files(env.modules_sources, "*.cpp")
