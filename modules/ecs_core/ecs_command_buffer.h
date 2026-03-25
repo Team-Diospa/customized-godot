@@ -57,7 +57,7 @@ public:
 
 private:
 	static ECSCommandBuffer *singleton;
-	
+
 	Vector<Command> command_queue;
 	Mutex mutex;
 
@@ -69,12 +69,11 @@ public:
 
 	// Thread-safe pipeline insertion boundaries
 	void queue_destroy_entity(uint64_t p_entity_id);
-	void queue_remove_component(uint64_t p_entity_id, const StringName& p_comp_name);
+	void queue_remove_component(uint64_t p_entity_id, const StringName &p_comp_name);
 
 	// Natively executed exclusively at the exact conclusion of Engine ticks ensuring read safety.
 	void execute_deferred_commands();
 
 	ECSCommandBuffer();
 	~ECSCommandBuffer();
-
 };
