@@ -361,6 +361,15 @@ inline bool EntityManager::has_component<ParentComponent>(uint64_t p_entity) {
 }
 
 template <>
+inline void EntityManager::add_component<WorldTransformComponent>(uint64_t p_entity, const WorldTransformComponent &p_comp) {
+	get_registry<WorldTransformComponent>("WorldTransformComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM;
+	}
+}
+
+template <>
 inline WorldTransformComponent &EntityManager::get_component<WorldTransformComponent>(uint64_t p_entity) {
 	return get_registry<WorldTransformComponent>("WorldTransformComponent")->get(p_entity);
 }
@@ -384,6 +393,15 @@ inline WorldTransform2DComponent &EntityManager::get_component<WorldTransform2DC
 template <>
 inline bool EntityManager::has_component<WorldTransform2DComponent>(uint64_t p_entity) {
 	return get_registry<WorldTransform2DComponent>("WorldTransform2DComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<Parent2DComponent>(uint64_t p_entity, const Parent2DComponent &p_comp) {
+	get_registry<Parent2DComponent>("Parent2DComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_PARENTS_2D;
+	}
 }
 
 template <>
