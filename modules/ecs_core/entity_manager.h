@@ -134,10 +134,18 @@ struct AudioComponent {
 	AudioComponent(const Variant &p_var) : volume(1.0), pitch(1.0), is_3d(false) {
 		if (p_var.get_type() == Variant::DICTIONARY) {
 			Dictionary d = p_var;
-			if (d.has("volume")) volume = d["volume"];
-			if (d.has("pitch")) pitch = d["pitch"];
-			if (d.has("is_3d")) is_3d = d["is_3d"];
-			if (d.has("stream_rid")) stream_rid = d["stream_rid"];
+			if (d.has("volume")) {
+				volume = d["volume"];
+			}
+			if (d.has("pitch")) {
+				pitch = d["pitch"];
+			}
+			if (d.has("is_3d")) {
+				is_3d = d["is_3d"];
+			}
+			if (d.has("stream_rid")) {
+				stream_rid = d["stream_rid"];
+			}
 		}
 	}
 };
@@ -150,12 +158,19 @@ struct InputComponent {
 	InputComponent(const Variant &p_var) : move_x(0), move_y(0), action_press(false), action_just_press(false) {
 		if (p_var.get_type() == Variant::VECTOR2) {
 			Vector2 v = p_var;
-			move_x = v.x; move_y = v.y;
+			move_x = v.x;
+			move_y = v.y;
 		} else if (p_var.get_type() == Variant::DICTIONARY) {
 			Dictionary d = p_var;
-			if (d.has("move_x")) move_x = d["move_x"];
-			if (d.has("move_y")) move_y = d["move_y"];
-			if (d.has("action_press")) action_press = d["action_press"];
+			if (d.has("move_x")) {
+				move_x = d["move_x"];
+			}
+			if (d.has("move_y")) {
+				move_y = d["move_y"];
+			}
+			if (d.has("action_press")) {
+				action_press = d["action_press"];
+			}
 		}
 	}
 };
@@ -172,9 +187,15 @@ struct AnimationComponent {
 	AnimationComponent(const Variant &p_var) : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {
 		if (p_var.get_type() == Variant::DICTIONARY) {
 			Dictionary d = p_var;
-			if (d.has("fps")) fps = d["fps"];
-			if (d.has("total_frames")) total_frames = d["total_frames"];
-			if (d.has("current_frame")) current_frame = d["current_frame"];
+			if (d.has("fps")) {
+				fps = d["fps"];
+			}
+			if (d.has("total_frames")) {
+				total_frames = d["total_frames"];
+			}
+			if (d.has("current_frame")) {
+				current_frame = d["current_frame"];
+			}
 		}
 	}
 };
