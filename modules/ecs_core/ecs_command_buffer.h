@@ -38,7 +38,7 @@
 class ISparseSet;
 
 // Encapsulates structural memory destruction operations into a deferred Thread-Safe queue.
-// This natively mathematically prevents Iterator Invalidation when WorkerThreadPool jobs 
+// This natively mathematically prevents Iterator Invalidation when WorkerThreadPool jobs
 // attempt to destroy entities mid-sweep (saving the ECS from 'swap-and-pop' segregation faults).
 class ECSCommandBuffer : public Object {
 	GDCLASS(ECSCommandBuffer, Object);
