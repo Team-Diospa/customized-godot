@@ -352,12 +352,21 @@ inline void EntityManager::add_component<ParentComponent>(uint64_t p_entity, con
 }
 
 template <>
-inline void EntityManager::add_component<WorldTransformComponent>(uint64_t p_entity, const WorldTransformComponent &p_comp) {
-	get_registry<WorldTransformComponent>("WorldTransformComponent")->insert(p_entity, p_comp);
-	uint32_t idx = get_entity_index(p_entity);
-	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM;
-	}
+inline ParentComponent &EntityManager::get_component<ParentComponent>(uint64_t p_entity) {
+	return get_registry<ParentComponent>("ParentComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<ParentComponent>(uint64_t p_entity) {
+	return get_registry<ParentComponent>("ParentComponent")->has(p_entity);
+}
+
+template <>
+inline WorldTransformComponent &EntityManager::get_component<WorldTransformComponent>(uint64_t p_entity) {
+	return get_registry<WorldTransformComponent>("WorldTransformComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<WorldTransformComponent>(uint64_t p_entity) {
+	return get_registry<WorldTransformComponent>("WorldTransformComponent")->has(p_entity);
 }
 
 template <>
@@ -368,14 +377,22 @@ inline void EntityManager::add_component<WorldTransform2DComponent>(uint64_t p_e
 		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM_2D;
 	}
 }
+template <>
+inline WorldTransform2DComponent &EntityManager::get_component<WorldTransform2DComponent>(uint64_t p_entity) {
+	return get_registry<WorldTransform2DComponent>("WorldTransform2DComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<WorldTransform2DComponent>(uint64_t p_entity) {
+	return get_registry<WorldTransform2DComponent>("WorldTransform2DComponent")->has(p_entity);
+}
 
 template <>
-inline void EntityManager::add_component<Parent2DComponent>(uint64_t p_entity, const Parent2DComponent &p_comp) {
-	get_registry<Parent2DComponent>("Parent2DComponent")->insert(p_entity, p_comp);
-	uint32_t idx = get_entity_index(p_entity);
-	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_PARENTS_2D;
-	}
+inline Parent2DComponent &EntityManager::get_component<Parent2DComponent>(uint64_t p_entity) {
+	return get_registry<Parent2DComponent>("Parent2DComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<Parent2DComponent>(uint64_t p_entity) {
+	return get_registry<Parent2DComponent>("Parent2DComponent")->has(p_entity);
 }
 
 template <>
@@ -385,4 +402,81 @@ inline void EntityManager::add_component<DebugComponent>(uint64_t p_entity, cons
 	if (idx < (uint32_t)entity_masks.size()) {
 		entity_masks.write[idx] |= BIT_DEBUG;
 	}
+}
+template <>
+inline DebugComponent &EntityManager::get_component<DebugComponent>(uint64_t p_entity) {
+	return get_registry<DebugComponent>("DebugComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<DebugComponent>(uint64_t p_entity) {
+	return get_registry<DebugComponent>("DebugComponent")->has(p_entity);
+}
+
+// Additional necessary specializations for full build stability
+template <>
+inline void EntityManager::add_component<AudioComponent>(uint64_t p_entity, const AudioComponent &p_comp) {
+	get_registry<AudioComponent>("AudioComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_AUDIO;
+	}
+}
+template <>
+inline AudioComponent &EntityManager::get_component<AudioComponent>(uint64_t p_entity) {
+	return get_registry<AudioComponent>("AudioComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<AudioComponent>(uint64_t p_entity) {
+	return get_registry<AudioComponent>("AudioComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<InputComponent>(uint64_t p_entity, const InputComponent &p_comp) {
+	get_registry<InputComponent>("InputComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_INPUT;
+	}
+}
+template <>
+inline InputComponent &EntityManager::get_component<InputComponent>(uint64_t p_entity) {
+	return get_registry<InputComponent>("InputComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<InputComponent>(uint64_t p_entity) {
+	return get_registry<InputComponent>("InputComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<AnimationComponent>(uint64_t p_entity, const AnimationComponent &p_comp) {
+	get_registry<AnimationComponent>("AnimationComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_ANIMATION;
+	}
+}
+template <>
+inline AnimationComponent &EntityManager::get_component<AnimationComponent>(uint64_t p_entity) {
+	return get_registry<AnimationComponent>("AnimationComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<AnimationComponent>(uint64_t p_entity) {
+	return get_registry<AnimationComponent>("AnimationComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<ShaderDataComponent>(uint64_t p_entity, const ShaderDataComponent &p_comp) {
+	get_registry<ShaderDataComponent>("ShaderDataComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_SHADER_DATA;
+	}
+}
+template <>
+inline ShaderDataComponent &EntityManager::get_component<ShaderDataComponent>(uint64_t p_entity) {
+	return get_registry<ShaderDataComponent>("ShaderDataComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<ShaderDataComponent>(uint64_t p_entity) {
+	return get_registry<ShaderDataComponent>("ShaderDataComponent")->has(p_entity);
 }

@@ -36,11 +36,18 @@
 #include "core/object/callable_mp.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"
+#include "core/object/class_db.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 PhysicsSystem2D *PhysicsSystem2D::singleton = nullptr;
 PhysicsSystem2D *PhysicsSystem2D::get_singleton() {
 	return singleton;
+}
+
+void PhysicsSystem2D::_bind_methods() {
+	// Native dispatch methods bound to ClassDB for GDScript visibility
+	ClassDB::bind_method(D_METHOD("process_physics_updates"), &PhysicsSystem2D::process_physics_updates);
+	ClassDB::bind_method(D_METHOD("solve_kinematic_movement_2d", "entity", "velocity"), &PhysicsSystem2D::solve_kinematic_movement_2d);
 }
 
 PhysicsSystem2D::PhysicsSystem2D() {
