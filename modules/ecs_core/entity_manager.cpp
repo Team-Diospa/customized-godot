@@ -41,6 +41,13 @@ EntityManager *EntityManager::get_singleton() {
 void EntityManager::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_entity"), &EntityManager::create_entity);
 	ClassDB::bind_method(D_METHOD("destroy_entity", "entity_id"), &EntityManager::destroy_entity);
+	ClassDB::bind_method(D_METHOD("is_entity_valid", "entity_id"), &EntityManager::is_entity_valid);
+	ClassDB::bind_method(D_METHOD("get_entity_count"), &EntityManager::get_entity_count);
+
+	ClassDB::bind_method(D_METHOD("add_component_untyped", "entity", "name", "data"), &EntityManager::add_component_untyped);
+	ClassDB::bind_method(D_METHOD("update_component_untyped", "entity", "name", "data"), &EntityManager::update_component_untyped);
+	ClassDB::bind_method(D_METHOD("get_entity_proxy", "entity"), &EntityManager::get_entity_proxy);
+	ClassDB::bind_method(D_METHOD("set_entity_position", "entity", "x", "y", "z"), &EntityManager::set_entity_position);
 
 	ADD_SIGNAL(MethodInfo("entity_created", PropertyInfo(Variant::INT, "entity_id")));
 	ADD_SIGNAL(MethodInfo("entity_destroyed", PropertyInfo(Variant::INT, "entity_id")));
@@ -162,6 +169,11 @@ void EntityManager::set_entity_position(uint64_t p_entity_id, float p_x, float p
 		t.y = p_y;
 		t.z = p_z;
 	}
+}
+
+int EntityManager::get_entity_count() const {
+	MutexLock lock(entity_mutex);
+	return generations.size() - free_list.size();
 }
 
 void EntityManager::add_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data) {

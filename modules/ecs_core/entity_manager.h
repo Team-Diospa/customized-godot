@@ -301,6 +301,7 @@ public:
 	void add_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data);
 	void update_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data);
 
+	int get_entity_count() const;
 	Object *get_entity_proxy(uint64_t p_entity);
 
 	EntityManager();
