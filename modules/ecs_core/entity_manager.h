@@ -155,8 +155,16 @@ struct AnimationComponent {
 };
 struct ShaderDataComponent {
 	float data[8];
-	ShaderDataComponent() { for(int i=0; i<8; i++) data[i]=0; }
-	ShaderDataComponent(const Variant &p_var) { for(int i=0; i<8; i++) data[i]=0; }
+	ShaderDataComponent() {
+		for (int i = 0; i < 8; i++) {
+			data[i] = 0;
+		}
+	}
+	ShaderDataComponent(const Variant &p_var) {
+		for (int i = 0; i < 8; i++) {
+			data[i] = 0;
+		}
+	}
 };
 
 class EntityManager : public Object {
