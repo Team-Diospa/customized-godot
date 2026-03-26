@@ -33,36 +33,74 @@
 #include "sparse_set.h"
 
 #include "core/object/object.h"
+#include "core/os/mutex.h"
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
-#include "core/os/mutex.h"
 #include "core/typedefs.h"
 
 #include <cstdint>
 
 // Core standard components (Dynamic registration replaces hardcoded variables)
-struct Transform2DComponent { float x, y, rotation; float scale_x = 1.0f, scale_y = 1.0f; };
-struct TransformComponent { float x, y, z; };
+struct Transform2DComponent {
+	float x, y, rotation;
+	float scale_x = 1.0f, scale_y = 1.0f;
+};
+struct TransformComponent {
+	float x, y, z;
+};
 
 // Phase 14 Production Hierarchy Components
-struct ParentComponent { uint64_t parent_id; float local_x, local_y, local_z; float local_rot_x, local_rot_y, local_rot_z; uint32_t depth = 0; };
-struct Parent2DComponent { uint64_t parent_id; float local_x, local_y, local_rot; uint32_t depth = 0; };
+struct ParentComponent {
+	uint64_t parent_id;
+	float local_x, local_y, local_z;
+	float local_rot_x, local_rot_y, local_rot_z;
+	uint32_t depth = 0;
+};
+struct Parent2DComponent {
+	uint64_t parent_id;
+	float local_x, local_y, local_rot;
+	uint32_t depth = 0;
+};
 
-struct WorldTransformComponent { float x, y, z; float rot_x, rot_y, rot_z; };
-struct WorldTransform2DComponent { float x, y, rotation; };
+struct WorldTransformComponent {
+	float x, y, z;
+	float rot_x, rot_y, rot_z;
+};
+struct WorldTransform2DComponent {
+	float x, y, rotation;
+};
 
 // Phase 15 Final Certification Zen Components
-struct DebugComponent { StringName label; };
+struct DebugComponent {
+	StringName label;
+};
 
 // Phase 12 Horror Infrastructure Components
-struct AudioComponent { RID stream_rid; float volume; float pitch; bool is_3d; };
-struct InputComponent { float move_x, move_y; bool action_press; bool action_just_press; };
+struct AudioComponent {
+	RID stream_rid;
+	float volume;
+	float pitch;
+	bool is_3d;
+};
+struct InputComponent {
+	float move_x, move_y;
+	bool action_press;
+	bool action_just_press;
+};
 
 // Phase 13 Visual Narrative Components
-struct AnimationComponent { float fps; int total_frames; int current_frame; float time_accumulator; float uv_offset_x, uv_offset_y; };
-struct ShaderDataComponent { float data[8]; };
+struct AnimationComponent {
+	float fps;
+	int total_frames;
+	int current_frame;
+	float time_accumulator;
+	float uv_offset_x, uv_offset_y;
+};
+struct ShaderDataComponent {
+	float data[8];
+};
 
 class EntityManager : public Object {
 	GDCLASS(EntityManager, Object);
@@ -78,7 +116,7 @@ private:
 	HashMap<StringName, ISparseSet *> registries;
 	ISparseSet *fast_registries[64] = { nullptr };
 	Vector<uint64_t> entity_masks;
-	
+
 	Mutex entity_mutex;
 
 protected:
@@ -110,7 +148,7 @@ public:
 	static inline uint32_t get_entity_generation(uint64_t p_id) { return (uint32_t)(p_id >> 32); }
 	static inline uint64_t make_entity_id(uint32_t index, uint32_t generation) { return ((uint64_t)generation << 32) | index; }
 
-	inline uint64_t get_entity_mask(uint64_t p_id) { 
+	inline uint64_t get_entity_mask(uint64_t p_id) {
 		uint32_t idx = get_entity_index(p_id);
 		return idx < (uint32_t)entity_masks.size() ? entity_masks[idx] : 0;
 	}
@@ -170,7 +208,7 @@ public:
 		}
 		return nullptr;
 	}
-	
+
 	// Core Engine Bindings using Direct Table Dispatch (O(1))
 	inline SparseSet<Transform2DComponent> *get_transforms_2d() { return get_registry_by_bit<Transform2DComponent>(BIT_TRANSFORM_2D); }
 	inline SparseSet<TransformComponent> *get_transforms() { return get_registry_by_bit<TransformComponent>(BIT_TRANSFORM); }
@@ -187,9 +225,9 @@ public:
 
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
-	
+
 	Object *get_entity_proxy(uint64_t p_entity);
-	
+
 	EntityManager();
 	~EntityManager();
 };
@@ -204,9 +242,13 @@ inline void EntityManager::add_component<TransformComponent>(uint64_t p_entity, 
 	}
 }
 template <>
-inline TransformComponent &EntityManager::get_component<TransformComponent>(uint64_t p_entity) { return get_registry<TransformComponent>("TransformComponent")->get(p_entity); }
+inline TransformComponent &EntityManager::get_component<TransformComponent>(uint64_t p_entity) {
+	return get_registry<TransformComponent>("TransformComponent")->get(p_entity);
+}
 template <>
-inline bool EntityManager::has_component<TransformComponent>(uint64_t p_entity) { return get_registry<TransformComponent>("TransformComponent")->has(p_entity); }
+inline bool EntityManager::has_component<TransformComponent>(uint64_t p_entity) {
+	return get_registry<TransformComponent>("TransformComponent")->has(p_entity);
+}
 
 template <>
 inline void EntityManager::add_component<Transform2DComponent>(uint64_t p_entity, const Transform2DComponent &p_comp) {
@@ -217,9 +259,13 @@ inline void EntityManager::add_component<Transform2DComponent>(uint64_t p_entity
 	}
 }
 template <>
-inline Transform2DComponent &EntityManager::get_component<Transform2DComponent>(uint64_t p_entity) { return get_registry<Transform2DComponent>("Transform2DComponent")->get(p_entity); }
+inline Transform2DComponent &EntityManager::get_component<Transform2DComponent>(uint64_t p_entity) {
+	return get_registry<Transform2DComponent>("Transform2DComponent")->get(p_entity);
+}
 template <>
-inline bool EntityManager::has_component<Transform2DComponent>(uint64_t p_entity) { return get_registry<Transform2DComponent>("Transform2DComponent")->has(p_entity); }
+inline bool EntityManager::has_component<Transform2DComponent>(uint64_t p_entity) {
+	return get_registry<Transform2DComponent>("Transform2DComponent")->has(p_entity);
+}
 
 template <>
 inline void EntityManager::add_component<ParentComponent>(uint64_t p_entity, const ParentComponent &p_comp) {

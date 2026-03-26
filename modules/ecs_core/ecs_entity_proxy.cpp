@@ -2,7 +2,9 @@
 /*  ecs_entity_proxy.cpp                                                  */
 /**************************************************************************/
 #include "ecs_entity_proxy.h"
+
 #include "entity_manager.h"
+
 #include "core/object/class_db.h"
 
 void ECSEntityProxy::set_entity(uint64_t p_id) {

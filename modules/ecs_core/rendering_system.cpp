@@ -29,14 +29,18 @@
 /**************************************************************************/
 
 #include "rendering_system.h"
+
 #include "entity_manager.h"
-#include "servers/rendering/rendering_server.h"
+
 #include "core/object/class_db.h"
 #include "core/variant/variant.h"
+#include "servers/rendering/rendering_server.h"
 
 RenderingSystem *RenderingSystem::singleton = nullptr;
 
-RenderingSystem *RenderingSystem::get_singleton() { return singleton; }
+RenderingSystem *RenderingSystem::get_singleton() {
+	return singleton;
+}
 
 void RenderingSystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("initialize_hardware_instancing", "mesh", "scenario"), &RenderingSystem::initialize_hardware_instancing);
@@ -69,7 +73,7 @@ void RenderingSystem::initialize_hardware_instancing(RID p_base_mesh, RID p_scen
 	rs->multimesh_set_mesh(multimesh_data_rid, p_base_mesh);
 	// Start with 0 or small count, let process_render_updates handle growth
 	rs->multimesh_allocate_data(multimesh_data_rid, 0, RenderingServer::MULTIMESH_TRANSFORM_3D, false);
-	
+
 	rs->instance_set_base(multimesh_instance_rid, multimesh_data_rid);
 	rs->instance_set_scenario(multimesh_instance_rid, p_scenario);
 }
@@ -90,7 +94,7 @@ void RenderingSystem::process_render_updates() {
 	SparseSet<TransformComponent> *transforms = em->get_transforms();
 
 	int active_count = worlds->size();
-	
+
 	rs->multimesh_allocate_data(multimesh_data_rid, active_count, RenderingServer::MULTIMESH_TRANSFORM_3D, RenderingServer::MULTIMESH_CUSTOM_DATA_FLOAT);
 
 	PackedFloat32Array buffer;

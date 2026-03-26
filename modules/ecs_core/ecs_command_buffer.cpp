@@ -29,14 +29,18 @@
 /**************************************************************************/
 
 #include "ecs_command_buffer.h"
+
 #include "entity_manager.h"
+
 #include "core/object/class_db.h"
 #include "core/os/mutex.h"
 #include "core/templates/vector.h"
 
 ECSCommandBuffer *ECSCommandBuffer::singleton = nullptr;
 
-ECSCommandBuffer *ECSCommandBuffer::get_singleton() { return singleton; }
+ECSCommandBuffer *ECSCommandBuffer::get_singleton() {
+	return singleton;
+}
 
 void ECSCommandBuffer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("queue_destroy_entity", "entity_id"), &ECSCommandBuffer::queue_destroy_entity);

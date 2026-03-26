@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "core/typedefs.h"
 #include "core/object/object.h"
+#include "core/typedefs.h"
 #include "scene/resources/packed_scene.h"
 
 /**
@@ -51,7 +51,7 @@ public:
 	static ECSPrefabBridge *get_singleton() { return singleton; }
 
 	uint64_t spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_parent = 0);
-	
+
 	ECSPrefabBridge();
 	~ECSPrefabBridge();
 };

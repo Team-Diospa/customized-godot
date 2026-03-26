@@ -29,13 +29,18 @@
 /**************************************************************************/
 
 #include "hierarchy_system.h"
-#include "core/object/class_db.h"
+
+#include "entity_manager.h"
 #include "simd_math.h"
+
+#include "core/object/class_db.h"
 #include "core/templates/vector.h"
 
 HierarchySystem *HierarchySystem::singleton = nullptr;
 
-HierarchySystem *HierarchySystem::get_singleton() { return singleton; }
+HierarchySystem *HierarchySystem::get_singleton() {
+	return singleton;
+}
 
 void HierarchySystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("process_hierarchy_updates"), &HierarchySystem::process_hierarchy_updates);
@@ -47,7 +52,9 @@ void HierarchySystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fix_all_depths_2d"), &HierarchySystem::fix_all_depths_2d);
 }
 
-HierarchySystem::HierarchySystem() { singleton = this; }
+HierarchySystem::HierarchySystem() {
+	singleton = this;
+}
 HierarchySystem::~HierarchySystem() {
 	if (singleton == this) {
 		singleton = nullptr;
@@ -76,7 +83,7 @@ void HierarchySystem::process_hierarchy_updates() {
 		});
 		hierarchy_needs_sort = false;
 	}
-	
+
 	// Linear pass using cached pointers
 	const uint64_t *__restrict entities = cache_parents->get_dense_raw().ptr();
 	int size = cache_parents->size();
@@ -84,14 +91,14 @@ void HierarchySystem::process_hierarchy_updates() {
 	for (int i = 0; i < size; i++) {
 		uint64_t entity = entities[i];
 		ParentComponent &p = cache_parents->get(entity);
-		
+
 		if (cache_worlds->has(p.parent_id)) {
-			const WorldTransformComponent & __restrict parent_world = cache_worlds->get(p.parent_id);
-			WorldTransformComponent & __restrict my_world = cache_worlds->get(entity);
-			
+			const WorldTransformComponent &__restrict parent_world = cache_worlds->get(p.parent_id);
+			WorldTransformComponent &__restrict my_world = cache_worlds->get(entity);
+
 			// SIMD Addition using restrict pointers
-			float a[4] = {parent_world.x, parent_world.y, parent_world.z, 1.0f};
-			float b[4] = {p.local_x, p.local_y, p.local_z, 0.0f};
+			float a[4] = { parent_world.x, parent_world.y, parent_world.z, 1.0f };
+			float b[4] = { p.local_x, p.local_y, p.local_z, 0.0f };
 			float res[4];
 			ecs::add_4f(a, b, res);
 
@@ -115,9 +122,9 @@ void HierarchySystem::process_hierarchy_2d_updates() {
 		return;
 	}
 
-	SparseSet<Parent2DComponent> * parents = em->get_parents_2d();
-	SparseSet<WorldTransform2DComponent> * worlds = em->get_world_transforms_2d();
-	SparseSet<Transform2DComponent> * transforms = em->get_transforms_2d();
+	SparseSet<Parent2DComponent> *parents = em->get_parents_2d();
+	SparseSet<WorldTransform2DComponent> *worlds = em->get_world_transforms_2d();
+	SparseSet<Transform2DComponent> *transforms = em->get_transforms_2d();
 
 	if (!parents || !worlds || !transforms) {
 		return;
@@ -134,11 +141,11 @@ void HierarchySystem::process_hierarchy_2d_updates() {
 	for (int i = 0; i < entities.size(); i++) {
 		uint64_t entity = entities[i];
 		Parent2DComponent &p = parents->get(entity);
-		
+
 		if (worlds->has(p.parent_id)) {
 			WorldTransform2DComponent &parent_world = worlds->get(p.parent_id);
 			WorldTransform2DComponent &my_world = worlds->get(entity);
-			
+
 			my_world.x = parent_world.x + p.local_x;
 			my_world.y = parent_world.y + p.local_y;
 			my_world.rotation = parent_world.rotation + p.local_rot;
@@ -173,11 +180,11 @@ void HierarchySystem::process_hierarchy_chunk(uint32_t p_start, uint32_t p_count
 		uint64_t entity = entities[i];
 		ParentComponent &p = cache_parents->get(entity);
 		if (cache_worlds->has(p.parent_id)) {
-			const WorldTransformComponent & __restrict parent_world = cache_worlds->get(p.parent_id);
-			WorldTransformComponent & __restrict my_world = cache_worlds->get(entity);
-			
-			float a[4] = {parent_world.x, parent_world.y, parent_world.z, 1.0f};
-			float b[4] = {p.local_x, p.local_y, p.local_z, 0.0f};
+			const WorldTransformComponent &__restrict parent_world = cache_worlds->get(p.parent_id);
+			WorldTransformComponent &__restrict my_world = cache_worlds->get(entity);
+
+			float a[4] = { parent_world.x, parent_world.y, parent_world.z, 1.0f };
+			float b[4] = { p.local_x, p.local_y, p.local_z, 0.0f };
 			float res[4];
 			ecs::add_4f(a, b, res);
 

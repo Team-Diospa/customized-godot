@@ -30,10 +30,11 @@
 
 #pragma once
 
-#include "scene/main/node.h" // Keep this for Node inheritance
-#include "core/typedefs.h"
 #include "core/object/object.h"
+#include "core/templates/vector.h"
+#include "core/typedefs.h"
 #include "core/variant/callable.h"
+#include "scene/main/node.h" // Keep this for Node inheritance
 
 // Abstract Registry evaluating pipelines dynamically via explicitly serialized Callable Arrays.
 // Eliminates structurally hardcoded 'Singletons.process()' hooks forcing pipeline constraints.
@@ -45,21 +46,21 @@ private:
 
 	Vector<Callable> process_systems;
 	Vector<Callable> physics_process_systems;
-	
+
 	uint64_t last_frame_usec = 0;
 
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
-	
+
 	// Static Bridges for WorkerThreadPool
 	static void _hierarchy_group_step(void *p_userdata, uint32_t p_index);
 	static void _hierarchy_2d_group_step(void *p_userdata, uint32_t p_index);
 
 public:
 	static ECSScheduler *get_singleton();
-	
-	// Explicit manual tick for bare-metal performance if needed, 
+
+	// Explicit manual tick for bare-metal performance if needed,
 	// though currently relying on NOTIFICATION_PROCESS.
 	void update_ecs();
 

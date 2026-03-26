@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "core/typedefs.h"
 #include "core/object/object.h"
+#include "core/typedefs.h"
 
 // Decouples OS input from ECS entities.
 // Essential for "Glitch horror" where the engine overrides player controls.

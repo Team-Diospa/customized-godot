@@ -32,7 +32,9 @@
 
 ShaderDataSystem *ShaderDataSystem::singleton = nullptr;
 
-ShaderDataSystem *ShaderDataSystem::get_singleton() { return singleton; }
+ShaderDataSystem *ShaderDataSystem::get_singleton() {
+	return singleton;
+}
 
 void ShaderDataSystem::_bind_methods() {}
 

@@ -30,11 +30,11 @@
 
 #pragma once
 
-#include "core/typedefs.h"
-#include "core/templates/vector.h"
-#include "core/variant/variant.h"
-#include "core/variant/callable.h"
 #include "core/os/rw_lock.h"
+#include "core/templates/vector.h"
+#include "core/typedefs.h"
+#include "core/variant/callable.h"
+#include "core/variant/variant.h"
 
 // Defines a 64-bit null check instead of 32-bit limits.
 const uint64_t NULL_ENTITY = 0xFFFFFFFFFFFFFFFF;
@@ -51,14 +51,14 @@ public:
 template <typename T>
 class SparseSet : public ISparseSet {
 private:
-	Vector<uint32_t> sparse; 
-	Vector<uint64_t> dense;  
+	Vector<uint32_t> sparse;
+	Vector<uint64_t> dense;
 	Vector<T> components;
 
 	// Component Lifecycle Observer Nodes implicitly notifying Servers
 	Vector<Callable> on_added_observers;
 	Vector<Callable> on_removed_observers;
-	
+
 	mutable RWLock lock;
 
 	inline uint32_t get_index(uint64_t p_entity) const { return (uint32_t)(p_entity & 0xFFFFFFFF); }
@@ -79,7 +79,7 @@ public:
 			uint32_t growth_target = old_size * 2;
 			uint32_t required_size = index + 1;
 			uint32_t new_size = (required_size > growth_target) ? required_size : growth_target;
-			
+
 			sparse.resize(new_size);
 			for (uint32_t i = old_size; i < (uint32_t)sparse.size(); i++) {
 				sparse.write[i] = (uint32_t)-1;
@@ -98,12 +98,13 @@ public:
 
 		// Native Dispatch perfectly signaling creation directly bypassing manual mapping
 		if (on_added_observers.size() > 0) {
-			 Variant arg = p_entity;
-			 const Variant *argptr = &arg;
-			 for (int i = 0; i < on_added_observers.size(); i++) {
-				 Callable::CallError err; Variant ret;
-				 on_added_observers[i].callp(&argptr, 1, ret, err);
-			 }
+			Variant arg = p_entity;
+			const Variant *argptr = &arg;
+			for (int i = 0; i < on_added_observers.size(); i++) {
+				Callable::CallError err;
+				Variant ret;
+				on_added_observers[i].callp(&argptr, 1, ret, err);
+			}
 		}
 	}
 
@@ -116,12 +117,13 @@ public:
 
 		// Native Dispatch signaling destruction directly bypassing engine node checks
 		if (on_removed_observers.size() > 0) {
-			 Variant arg = p_entity;
-			 const Variant *argptr = &arg;
-			 for (int i = 0; i < on_removed_observers.size(); i++) {
-				 Callable::CallError err; Variant ret;
-				 on_removed_observers[i].callp(&argptr, 1, ret, err);
-			 }
+			Variant arg = p_entity;
+			const Variant *argptr = &arg;
+			for (int i = 0; i < on_removed_observers.size(); i++) {
+				Callable::CallError err;
+				Variant ret;
+				on_removed_observers[i].callp(&argptr, 1, ret, err);
+			}
 		}
 
 		uint32_t index = get_index(p_entity);
@@ -166,7 +168,7 @@ public:
 			return;
 		}
 
-		// Use a simple insertion sort for "bare-metal" simplicity, 
+		// Use a simple insertion sort for "bare-metal" simplicity,
 		// but with direct component access for speed.
 		for (int i = 1; i < n; i++) {
 			uint64_t key_e = dense[i];
@@ -188,13 +190,13 @@ public:
 		}
 	}
 
-	int size() const override { 
+	int size() const override {
 		RWLockRead r(lock);
-		return dense.size(); 
+		return dense.size();
 	}
-	const Vector<uint64_t>& get_dense_raw() const override { return dense; }
-	Vector<T>& get_components() { return components; }
-	
+	const Vector<uint64_t> &get_dense_raw() const override { return dense; }
+	Vector<T> &get_components() { return components; }
+
 	// Thread-safe raw access for batch processing
 	RWLock &get_lock() const { return lock; }
 };

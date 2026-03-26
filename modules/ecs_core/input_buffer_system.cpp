@@ -29,13 +29,17 @@
 /**************************************************************************/
 
 #include "input_buffer_system.h"
+
 #include "entity_manager.h"
+
 #include "core/input/input.h"
 #include "core/templates/vector.h"
 
 InputBufferSystem *InputBufferSystem::singleton = nullptr;
 
-InputBufferSystem *InputBufferSystem::get_singleton() { return singleton; }
+InputBufferSystem *InputBufferSystem::get_singleton() {
+	return singleton;
+}
 
 void InputBufferSystem::_bind_methods() {}
 

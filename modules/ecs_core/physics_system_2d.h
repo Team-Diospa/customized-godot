@@ -47,16 +47,19 @@
 // Distinctly executes exact purely abstract native 2D server interactions natively
 class PhysicsSystem2D : public Object {
 	GDCLASS(PhysicsSystem2D, Object);
+
 private:
 	static PhysicsSystem2D *singleton;
 	Vector<RID> physics_bodies;
 	void _on_transform_removed(uint64_t p_entity);
+
 protected:
 	static void _bind_methods();
+
 public:
 	static PhysicsSystem2D *get_singleton();
 	void process_physics_updates();
-	
+
 	void register_entity_physics(int p_entity_id, RID p_shape, RID p_space);
 	void unregister_entity_physics(int p_entity_id);
 

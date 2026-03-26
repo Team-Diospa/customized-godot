@@ -29,30 +29,33 @@
 /**************************************************************************/
 
 #include "ecs_scheduler.h"
-#include "core/object/worker_thread_pool.h"
-#include "core/os/os.h"
-#include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/variant/callable.h"
-#include "core/templates/vector.h"
-#include "hierarchy_system.h"
-#include "core/object/class_db.h"
-#include "core/variant/variant.h"
 
-#include "rendering_system.h"
-#include "rendering_system_2d.h"
-#include "physics_system.h"
-#include "physics_system_2d.h"
-#include "audio_system.h"
-#include "input_buffer_system.h"
 #include "animation_system.h"
-#include "shader_data_system.h"
+#include "audio_system.h"
 #include "ecs_command_buffer.h"
 #include "entity_manager.h"
+#include "hierarchy_system.h"
+#include "input_buffer_system.h"
+#include "physics_system.h"
+#include "physics_system_2d.h"
+#include "rendering_system.h"
+#include "rendering_system_2d.h"
+#include "shader_data_system.h"
+
+#include "core/config/engine.h"
+#include "core/object/callable_mp.h"
+#include "core/object/class_db.h"
+#include "core/object/worker_thread_pool.h"
+#include "core/os/os.h"
+#include "core/templates/vector.h"
+#include "core/variant/callable.h"
+#include "core/variant/variant.h"
 
 ECSScheduler *ECSScheduler::singleton = nullptr;
 
-ECSScheduler *ECSScheduler::get_singleton() { return singleton; }
+ECSScheduler *ECSScheduler::get_singleton() {
+	return singleton;
+}
 
 void ECSScheduler::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_process_system", "system"), &ECSScheduler::register_process_system);
@@ -60,10 +63,16 @@ void ECSScheduler::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_last_frame_usec"), &ECSScheduler::get_last_frame_usec);
 }
 
-void ECSScheduler::register_process_system(const Callable &p_system) { process_systems.push_back(p_system); }
-void ECSScheduler::register_physics_system(const Callable &p_system) { physics_process_systems.push_back(p_system); }
+void ECSScheduler::register_process_system(const Callable &p_system) {
+	process_systems.push_back(p_system);
+}
+void ECSScheduler::register_physics_system(const Callable &p_system) {
+	physics_process_systems.push_back(p_system);
+}
 
-uint64_t ECSScheduler::get_last_frame_usec() const { return last_frame_usec; }
+uint64_t ECSScheduler::get_last_frame_usec() const {
+	return last_frame_usec;
+}
 
 ECSScheduler::ECSScheduler() {
 	singleton = this;
@@ -79,21 +88,21 @@ ECSScheduler::ECSScheduler() {
 	if (RenderingSystem2D::get_singleton()) {
 		register_process_system(callable_mp(RenderingSystem2D::get_singleton(), &RenderingSystem2D::process_render_updates));
 	}
-	
+
 	if (PhysicsSystem::get_singleton()) {
 		register_physics_system(callable_mp(PhysicsSystem::get_singleton(), &PhysicsSystem::process_physics_updates));
 	}
 	if (PhysicsSystem2D::get_singleton()) {
 		register_physics_system(callable_mp(PhysicsSystem2D::get_singleton(), &PhysicsSystem2D::process_physics_updates));
 	}
-	
+
 	if (AudioSystem::get_singleton()) {
 		register_process_system(callable_mp(AudioSystem::get_singleton(), &AudioSystem::process_audio_updates));
 	}
 	if (InputBufferSystem::get_singleton()) {
 		register_process_system(callable_mp(InputBufferSystem::get_singleton(), &InputBufferSystem::process_input_buffer));
 	}
-	
+
 	if (AnimationSystem::get_singleton()) {
 		register_process_system(callable_mp(AnimationSystem::get_singleton(), &AnimationSystem::process_animation_updates));
 	}
@@ -117,7 +126,7 @@ void ECSScheduler::_notification(int p_what) {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
-	
+
 	if (p_what == Node::NOTIFICATION_PROCESS) {
 		uint64_t begin_t = OS::get_singleton()->get_ticks_usec();
 		// 1. Parallel Hierarchy Update
@@ -141,10 +150,11 @@ void ECSScheduler::_notification(int p_what) {
 
 		// 2. Generic Process Systems
 		for (int i = 0; i < process_systems.size(); i++) {
-			Variant ret; Callable::CallError err;
+			Variant ret;
+			Callable::CallError err;
 			process_systems[i].callp(nullptr, 0, ret, err);
 		}
-		
+
 		if (ECSCommandBuffer::get_singleton()) {
 			ECSCommandBuffer::get_singleton()->execute_deferred_commands();
 		}
@@ -152,7 +162,8 @@ void ECSScheduler::_notification(int p_what) {
 		last_frame_usec = OS::get_singleton()->get_ticks_usec() - begin_t;
 	} else if (p_what == Node::NOTIFICATION_PHYSICS_PROCESS) {
 		for (int i = 0; i < physics_process_systems.size(); i++) {
-			Variant ret; Callable::CallError err;
+			Variant ret;
+			Callable::CallError err;
 			physics_process_systems[i].callp(nullptr, 0, ret, err);
 		}
 

@@ -30,18 +30,18 @@
 
 #pragma once
 
-#include "core/typedefs.h"
 #include "core/object/object.h"
+#include "core/typedefs.h"
 
-// High-performance 2D Canvas Batcher. 
-// Uses RenderingServer::canvas_item_add_multimesh to draw 10,000+ pixel sprites 
+// High-performance 2D Canvas Batcher.
+// Uses RenderingServer::canvas_item_add_multimesh to draw 10,000+ pixel sprites
 // in exactly 1 GPU draw call, bypassing the heavy Node2D/Sprite2D overhead entirely.
 class RenderingSystem2D : public Object {
 	GDCLASS(RenderingSystem2D, Object);
 
 private:
 	static RenderingSystem2D *singleton;
-	
+
 	RID canvas_item;
 	RID multimesh;
 	RID mesh;

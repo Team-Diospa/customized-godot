@@ -45,7 +45,7 @@ namespace ecs {
 
 struct OctreeNode {
 	AABB bounds;
-	int children[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+	int children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	Vector<uint64_t> entities;
 	bool is_leaf = true;
 };
@@ -88,17 +88,16 @@ private:
 	void _subdivide(int p_node_idx) {
 		OctreeNode &node = nodes.write[p_node_idx];
 		node.is_leaf = false;
-		
+
 		Vector3 size = node.bounds.size * 0.5f;
 		Vector3 min = node.bounds.position;
 
 		for (int i = 0; i < 8; i++) {
 			Vector3 offset(
-				(i & 1) ? size.x : 0,
-				(i & 2) ? size.y : 0,
-				(i & 4) ? size.z : 0
-			);
-			
+					(i & 1) ? size.x : 0,
+					(i & 2) ? size.y : 0,
+					(i & 4) ? size.z : 0);
+
 			OctreeNode child;
 			child.bounds = AABB(min + offset, size);
 			node.children[i] = nodes.size();
@@ -106,7 +105,7 @@ private:
 		}
 
 		// Re-distribute existing entities (Simple implementation for bare-metal)
-		Vector<uint64_t> old_entities = node.entities; 
+		Vector<uint64_t> old_entities = node.entities;
 		node.entities.clear();
 		for (int i = 0; i < old_entities.size(); i++) {
 			// Re-insert logic would go here, for now we keep at leaf or root for demo
@@ -134,8 +133,8 @@ private:
 		return vgetq_lane_u32(mask, 0) && vgetq_lane_u32(mask, 1) && vgetq_lane_u32(mask, 2);
 #else
 		return p_test_max[0] >= p_box_min[0] && p_test_min[0] <= p_box_max[0] &&
-			   p_test_max[1] >= p_box_min[1] && p_test_min[1] <= p_box_max[1] &&
-			   p_test_max[2] >= p_box_min[2] && p_test_min[2] <= p_box_max[2];
+				p_test_max[1] >= p_box_min[1] && p_test_min[1] <= p_box_max[1] &&
+				p_test_max[2] >= p_box_min[2] && p_test_min[2] <= p_box_max[2];
 #endif
 	}
 };

@@ -34,11 +34,11 @@
 
 // Check for SIMD support
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	#define ECS_USE_SSE
-	#include <immintrin.h>
+#define ECS_USE_SSE
+#include <immintrin.h>
 #elif defined(__arm64__) || defined(__aarch64__) || defined(_M_ARM64)
-	#define ECS_USE_NEON
-	#include <arm_neon.h>
+#define ECS_USE_NEON
+#include <arm_neon.h>
 #endif
 
 namespace ecs {

@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "core/typedefs.h"
 #include "core/object/object.h"
+#include "core/typedefs.h"
 
 // Manages per-entity custom shader parameters (glitch, corruption, etc).
 class ShaderDataSystem : public Object {

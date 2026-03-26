@@ -29,7 +29,9 @@
 /**************************************************************************/
 
 #include "ecs_serializer.h"
+
 #include "entity_manager.h"
+
 #include "core/io/file_access.h"
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
@@ -82,7 +84,7 @@ int ECSSerializer::save_world(const String &p_path) {
 	} else {
 		f->store_32(0);
 	}
-	
+
 	return 0; // OK
 }
 
@@ -114,7 +116,7 @@ int ECSSerializer::load_world(const String &p_path) {
 		float y = f->get_float();
 		float z = f->get_float();
 
-		// For barebones, we recreate the entity if it doesn't exist, 
+		// For barebones, we recreate the entity if it doesn't exist,
 		// or update it if it does.
 		if (!em->is_entity_valid(entity)) {
 			// This is complex for a barebones loader (ID recreation)
@@ -124,7 +126,9 @@ int ECSSerializer::load_world(const String &p_path) {
 			em->add_component(new_entity, tc);
 		} else {
 			TransformComponent &tc = em->get_component<TransformComponent>(entity);
-			tc.x = x; tc.y = y; tc.z = z;
+			tc.x = x;
+			tc.y = y;
+			tc.z = z;
 		}
 	}
 

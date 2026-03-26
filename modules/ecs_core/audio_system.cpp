@@ -29,9 +29,11 @@
 /**************************************************************************/
 
 #include "audio_system.h"
+
 #include "entity_manager.h"
-#include "core/templates/vector.h"
+
 #include "core/object/callable_mp.h"
+#include "core/templates/vector.h"
 #include "servers/audio/audio_server.h"
 
 AudioSystem *AudioSystem::singleton = nullptr;

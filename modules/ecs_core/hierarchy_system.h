@@ -30,20 +30,22 @@
 
 #pragma once
 
-#include "core/typedefs.h"
-#include "core/object/object.h"
 #include "entity_manager.h"
+#include "sparse_set.h"
+
+#include "core/object/object.h"
+#include "core/typedefs.h"
 
 class HierarchySystem : public Object {
 	GDCLASS(HierarchySystem, Object);
 
 	static HierarchySystem *singleton;
 
-	SparseSet<ParentComponent>* cache_parents = nullptr;
-	SparseSet<WorldTransformComponent>* cache_worlds = nullptr;
-	SparseSet<TransformComponent>* cache_transforms = nullptr;
-	SparseSet<Parent2DComponent>* cache_parents_2d = nullptr;
-	SparseSet<WorldTransform2DComponent>* cache_worlds_2d = nullptr;
+	SparseSet<ParentComponent> *cache_parents = nullptr;
+	SparseSet<WorldTransformComponent> *cache_worlds = nullptr;
+	SparseSet<TransformComponent> *cache_transforms = nullptr;
+	SparseSet<Parent2DComponent> *cache_parents_2d = nullptr;
+	SparseSet<WorldTransform2DComponent> *cache_worlds_2d = nullptr;
 
 	bool hierarchy_needs_sort = false;
 	bool hierarchy_2d_needs_sort = false;

@@ -29,15 +29,19 @@
 /**************************************************************************/
 
 #include "physics_system_2d.h"
+
 #include "entity_manager.h"
-#include "servers/physics_2d/physics_server_2d.h"
+
 #include "core/math/transform_2d.h"
 #include "core/object/callable_mp.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 PhysicsSystem2D *PhysicsSystem2D::singleton = nullptr;
-PhysicsSystem2D *PhysicsSystem2D::get_singleton() { return singleton; }
+PhysicsSystem2D *PhysicsSystem2D::get_singleton() {
+	return singleton;
+}
 
 PhysicsSystem2D::PhysicsSystem2D() {
 	singleton = this;
@@ -110,7 +114,7 @@ void PhysicsSystem2D::process_physics_updates() {
 	if (!em) {
 		return;
 	}
-	
+
 	SparseSet<Transform2DComponent> *transforms = em->get_transforms_2d();
 	if (!transforms || transforms->size() == 0) {
 		return;
@@ -120,7 +124,7 @@ void PhysicsSystem2D::process_physics_updates() {
 	for (int i = 0; i < active_entities.size(); i++) {
 		uint64_t entity = active_entities[i];
 		Transform2DComponent &t2d = transforms->get(entity);
-		
+
 		// This handles standard positioning updates for non-kinematic objects
 		// (Bullet swarms, debris etc)
 	}

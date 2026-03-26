@@ -29,12 +29,16 @@
 /**************************************************************************/
 
 #include "animation_system.h"
+
 #include "entity_manager.h"
+
 #include "core/templates/vector.h"
 
 AnimationSystem *AnimationSystem::singleton = nullptr;
 
-AnimationSystem *AnimationSystem::get_singleton() { return singleton; }
+AnimationSystem *AnimationSystem::get_singleton() {
+	return singleton;
+}
 
 void AnimationSystem::_bind_methods() {}
 
@@ -62,7 +66,7 @@ void AnimationSystem::process_animation_updates(float p_delta) {
 	const Vector<uint64_t> &entities = animations->get_dense_raw();
 	for (int i = 0; i < entities.size(); i++) {
 		AnimationComponent &anim = animations->get(entities[i]);
-		
+
 		anim.time_accumulator += p_delta;
 		float frame_time = 1.0f / anim.fps;
 

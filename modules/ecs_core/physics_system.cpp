@@ -33,12 +33,11 @@
 #include "entity_manager.h"
 
 #include "core/math/transform_3d.h"
+#include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"
 #include "servers/physics_3d/physics_server_3d.h"
-#include "core/object/callable_mp.h"
-
 
 PhysicsSystem *PhysicsSystem::singleton = nullptr;
 
@@ -74,7 +73,7 @@ PhysicsSystem::~PhysicsSystem() {
 	if (singleton == this) {
 		singleton = nullptr;
 	}
-	
+
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 	if (ps) {
 		for (int i = 0; i < physics_bodies.size(); i++) {

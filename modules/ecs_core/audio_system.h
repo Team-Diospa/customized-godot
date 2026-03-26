@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/typedefs.h"
 #include "core/object/object.h"
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
@@ -43,7 +42,7 @@ class AudioSystem : public Object {
 
 private:
 	static AudioSystem *singleton;
-	
+
 	// Internal mapping of entity to AudioServer voices
 	Vector<RID> active_voices;
 
