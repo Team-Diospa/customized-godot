@@ -70,7 +70,9 @@ public:
 		uint32_t index = get_index(p_entity);
 		if (index >= (uint32_t)sparse.size()) {
 			int old_size = sparse.size();
-			sparse.resize(index + 1);
+			// Geometric growth to avoid O(N) reallocations
+			int new_size = MAX(index + 1, old_size * 2);
+			sparse.resize(new_size);
 			for (int i = old_size; i < sparse.size(); i++) {
 				sparse.write[i] = (uint32_t)-1;
 			}

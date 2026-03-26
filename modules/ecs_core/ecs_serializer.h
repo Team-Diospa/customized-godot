@@ -48,8 +48,8 @@ protected:
 public:
 	static ECSSerializer *get_singleton() { return singleton; }
 
-	Error save_world(const String &p_path);
-	Error load_world(const String &p_path);
+	int save_world(const String &p_path);
+	int load_world(const String &p_path);
 
 	ECSSerializer();
 	~ECSSerializer();

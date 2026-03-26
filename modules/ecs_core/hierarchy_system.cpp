@@ -90,6 +90,13 @@ void HierarchySystem::process_hierarchy_updates() {
 			my_world.x = res[0];
 			my_world.y = res[1];
 			my_world.z = res[2];
+		} else if (cache_transforms->has(entity)) {
+			// Root case: World = Local
+			const TransformComponent &t = cache_transforms->get(entity);
+			WorldTransformComponent &my_world = cache_worlds->get(entity);
+			my_world.x = t.x;
+			my_world.y = t.y;
+			my_world.z = t.z;
 		}
 	}
 }

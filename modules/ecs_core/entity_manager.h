@@ -37,6 +37,7 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
+#include "core/os/mutex.h"
 #include "core/typedefs.h"
 
 #include <cstdint>
@@ -74,6 +75,8 @@ private:
 	HashMap<StringName, ISparseSet *> registries;
 	ISparseSet *fast_registries[64] = { nullptr };
 	Vector<uint64_t> entity_masks;
+	
+	Mutex entity_mutex;
 
 protected:
 	static void _bind_methods();

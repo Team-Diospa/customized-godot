@@ -29,6 +29,10 @@
 /**************************************************************************/
 
 #include "ecs_serializer.h"
+#include "entity_manager.h"
+#include "core/io/file_access.h"
+#include "core/object/class_db.h"
+#include "core/object/ref_counted.h"
 
 ECSSerializer *ECSSerializer::singleton = nullptr;
 
@@ -47,7 +51,7 @@ ECSSerializer::~ECSSerializer() {
 	}
 }
 
-Error ECSSerializer::save_world(const String &p_path) {
+int ECSSerializer::save_world(const String &p_path) {
 	EntityManager *em = EntityManager::get_singleton();
 	if (!em) {
 		return ERR_CANT_CREATE;
@@ -62,13 +66,67 @@ Error ECSSerializer::save_world(const String &p_path) {
 	f->store_32(0x45435357); // "ECSW" magic number
 	f->store_32(1); // Version
 
-	// 2. Count entities and save them
-	// Implementation details: Iterate through registries and store data...
+	// 2. Save Registry Data
+	SparseSet<TransformComponent> *transforms = em->get_transforms();
+	if (transforms) {
+		const Vector<uint64_t> &entities = transforms->get_dense_raw();
+		f->store_32(entities.size());
+		for (int i = 0; i < entities.size(); i++) {
+			uint64_t entity = entities[i];
+			TransformComponent &t = transforms->get(entity);
+			f->store_64(entity);
+			f->store_float(t.x);
+			f->store_float(t.y);
+			f->store_float(t.z);
+		}
+	} else {
+		f->store_32(0);
+	}
 	
-	return OK;
+	return 0; // OK
 }
 
-Error ECSSerializer::load_world(const String &p_path) {
-	// Reverse of save_world
-	return OK;
+int ECSSerializer::load_world(const String &p_path) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em) {
+		return ERR_CANT_CREATE;
+	}
+
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
+	if (f.is_null()) {
+		return ERR_FILE_CANT_OPEN;
+	}
+
+	// 1. Read Header
+	if (f->get_32() != 0x45435357) {
+		return ERR_FILE_UNRECOGNIZED;
+	}
+	uint32_t version = f->get_32();
+	if (version != 1) {
+		return ERR_FILE_UNRECOGNIZED;
+	}
+
+	// 2. Load Registry Data
+	uint32_t count = f->get_32();
+	for (uint32_t i = 0; i < count; i++) {
+		uint64_t entity = f->get_64();
+		float x = f->get_float();
+		float y = f->get_float();
+		float z = f->get_float();
+
+		// For barebones, we recreate the entity if it doesn't exist, 
+		// or update it if it does.
+		if (!em->is_entity_valid(entity)) {
+			// This is complex for a barebones loader (ID recreation)
+			// For now, we just create NEW entities and ignore the old ID
+			uint64_t new_entity = em->create_entity();
+			TransformComponent tc = { x, y, z };
+			em->add_component(new_entity, tc);
+		} else {
+			TransformComponent &tc = em->get_component<TransformComponent>(entity);
+			tc.x = x; tc.y = y; tc.z = z;
+		}
+	}
+
+	return 0; // OK
 }

@@ -67,7 +67,8 @@ RenderingSystem::~RenderingSystem() {
 void RenderingSystem::initialize_hardware_instancing(RID p_base_mesh, RID p_scenario) {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	rs->multimesh_set_mesh(multimesh_data_rid, p_base_mesh);
-	rs->multimesh_allocate_data(multimesh_data_rid, 10000, RenderingServer::MULTIMESH_TRANSFORM_3D, false);
+	// Start with 0 or small count, let process_render_updates handle growth
+	rs->multimesh_allocate_data(multimesh_data_rid, 0, RenderingServer::MULTIMESH_TRANSFORM_3D, false);
 	
 	rs->instance_set_base(multimesh_instance_rid, multimesh_data_rid);
 	rs->instance_set_scenario(multimesh_instance_rid, p_scenario);

@@ -29,11 +29,14 @@
 /**************************************************************************/
 
 #include "ecs_prefab_bridge.h"
+#include "entity_manager.h"
 #include "scene/main/node.h"
 #include "scene/3d/node_3d.h"
 #include "scene/2d/node_2d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/2d/sprite_2d.h"
+#include "scene/resources/packed_scene.h"
+#include "core/object/class_db.h"
 #include "core/object/object.h"
 #include "core/variant/variant.h"
 

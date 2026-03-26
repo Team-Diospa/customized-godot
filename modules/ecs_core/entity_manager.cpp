@@ -71,6 +71,8 @@ EntityManager::~EntityManager() {
 }
 
 uint64_t EntityManager::create_entity() {
+	MutexLock lock(entity_mutex);
+	
 	uint32_t index;
 	if (free_list.size() > 0) {
 		index = free_list[free_list.size() - 1];
@@ -84,11 +86,17 @@ uint64_t EntityManager::create_entity() {
 }
 
 void EntityManager::destroy_entity(uint64_t p_entity_id) {
+	MutexLock lock(entity_mutex);
+	
 	uint32_t index = get_entity_index(p_entity_id);
 	if (index >= (uint32_t)generations.size()) {
 		return;
 	}
 	
+	if (generations[index] != get_entity_generation(p_entity_id)) {
+		return; // Already destroyed or invalid
+	}
+
 	generations.write[index]++; // Invalidate existing IDs
 	entity_masks.write[index] = 0; // Clear mask
 	free_list.push_back(index);
@@ -98,4 +106,15 @@ void EntityManager::destroy_entity(uint64_t p_entity_id) {
 			E.value->remove(p_entity_id);
 		}
 	}
+}
+
+bool EntityManager::is_entity_valid(uint64_t p_entity_id) {
+	MutexLock lock(entity_mutex);
+	
+	uint32_t index = get_entity_index(p_entity_id);
+	if (index >= (uint32_t)generations.size()) {
+		return false;
+	}
+	
+	return generations[index] == get_entity_generation(p_entity_id);
 }

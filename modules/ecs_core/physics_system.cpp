@@ -74,17 +74,36 @@ PhysicsSystem::~PhysicsSystem() {
 	if (singleton == this) {
 		singleton = nullptr;
 	}
+	
+	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+	if (ps) {
+		for (int i = 0; i < physics_bodies.size(); i++) {
+			if (physics_bodies[i].is_valid()) {
+				ps->free_rid(physics_bodies[i]);
+			}
+		}
+	}
 }
 
 void PhysicsSystem::register_entity_physics(int p_entity_id, RID p_shape, RID p_space) {
-	if (p_entity_id >= 0 && p_entity_id < physics_bodies.size()) {
-		RID new_body = PhysicsServer3D::get_singleton()->body_create();
-		PhysicsServer3D::get_singleton()->body_set_mode(new_body, PhysicsServer3D::BODY_MODE_KINEMATIC);
-		PhysicsServer3D::get_singleton()->body_add_shape(new_body, p_shape);
-		PhysicsServer3D::get_singleton()->body_set_space(new_body, p_space);
-
-		physics_bodies.write[p_entity_id] = new_body;
+	if (p_entity_id < 0) {
+		return;
 	}
+
+	if (p_entity_id >= physics_bodies.size()) {
+		int old_size = physics_bodies.size();
+		physics_bodies.resize(p_entity_id + 1024); // Grow in chunks
+		for (int i = old_size; i < physics_bodies.size(); i++) {
+			physics_bodies.write[i] = RID();
+		}
+	}
+
+	RID new_body = PhysicsServer3D::get_singleton()->body_create();
+	PhysicsServer3D::get_singleton()->body_set_mode(new_body, PhysicsServer3D::BODY_MODE_KINEMATIC);
+	PhysicsServer3D::get_singleton()->body_add_shape(new_body, p_shape);
+	PhysicsServer3D::get_singleton()->body_set_space(new_body, p_space);
+
+	physics_bodies.write[p_entity_id] = new_body;
 }
 
 void PhysicsSystem::unregister_entity_physics(int p_entity_id) {

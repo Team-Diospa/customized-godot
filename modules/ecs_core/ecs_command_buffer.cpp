@@ -29,9 +29,10 @@
 /**************************************************************************/
 
 #include "ecs_command_buffer.h"
-
 #include "entity_manager.h"
 #include "core/object/class_db.h"
+#include "core/os/mutex.h"
+#include "core/templates/vector.h"
 
 ECSCommandBuffer *ECSCommandBuffer::singleton = nullptr;
 

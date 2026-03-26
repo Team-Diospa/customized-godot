@@ -32,17 +32,76 @@
 #include "entity_manager.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "core/math/transform_2d.h"
+#include "core/object/callable_mp.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"
 
 PhysicsSystem2D *PhysicsSystem2D::singleton = nullptr;
 PhysicsSystem2D *PhysicsSystem2D::get_singleton() { return singleton; }
 
-void PhysicsSystem2D::_bind_methods() {}
-PhysicsSystem2D::PhysicsSystem2D() { singleton = this; }
+PhysicsSystem2D::PhysicsSystem2D() {
+	singleton = this;
+	physics_bodies.resize(10000);
+
+	EntityManager *em = EntityManager::get_singleton();
+	if (em) {
+		SparseSet<Transform2DComponent> *transforms = em->get_transforms_2d();
+		if (transforms) {
+			transforms->register_on_removed(callable_mp(this, &PhysicsSystem2D::_on_transform_removed));
+		}
+	}
+}
+
+void PhysicsSystem2D::_on_transform_removed(uint64_t p_entity) {
+	uint32_t index = (uint32_t)(p_entity & 0xFFFFFFFF);
+	if (index < (uint32_t)physics_bodies.size()) {
+		unregister_entity_physics(index);
+	}
+}
+
 PhysicsSystem2D::~PhysicsSystem2D() {
 	if (singleton == this) {
 		singleton = nullptr;
+	}
+
+	PhysicsServer2D *ps = PhysicsServer2D::get_singleton();
+	if (ps) {
+		for (int i = 0; i < physics_bodies.size(); i++) {
+			if (physics_bodies[i].is_valid()) {
+				ps->free_rid(physics_bodies[i]);
+			}
+		}
+	}
+}
+
+void PhysicsSystem2D::register_entity_physics(int p_entity_id, RID p_shape, RID p_space) {
+	if (p_entity_id < 0) {
+		return;
+	}
+
+	if (p_entity_id >= physics_bodies.size()) {
+		int old_size = physics_bodies.size();
+		physics_bodies.resize(p_entity_id + 1024);
+		for (int i = old_size; i < physics_bodies.size(); i++) {
+			physics_bodies.write[i] = RID();
+		}
+	}
+
+	RID new_body = PhysicsServer2D::get_singleton()->body_create();
+	PhysicsServer2D::get_singleton()->body_set_mode(new_body, PhysicsServer2D::BODY_MODE_KINEMATIC);
+	PhysicsServer2D::get_singleton()->body_add_shape(new_body, p_shape);
+	PhysicsServer2D::get_singleton()->body_set_space(new_body, p_space);
+
+	physics_bodies.write[p_entity_id] = new_body;
+}
+
+void PhysicsSystem2D::unregister_entity_physics(int p_entity_id) {
+	if (p_entity_id >= 0 && p_entity_id < physics_bodies.size()) {
+		RID instance = physics_bodies[p_entity_id];
+		if (instance.is_valid()) {
+			PhysicsServer2D::get_singleton()->free_rid(instance);
+		}
+		physics_bodies.write[p_entity_id] = RID();
 	}
 }
 

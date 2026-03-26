@@ -38,8 +38,10 @@
 
 #pragma once
 
-#include "core/typedefs.h"
+#include "core/math/vector2.h"
 #include "core/object/object.h"
+#include "core/templates/rid.h"
+#include "core/templates/vector.h"
 #include "core/typedefs.h"
 
 // Distinctly executes exact purely abstract native 2D server interactions natively
@@ -47,12 +49,17 @@ class PhysicsSystem2D : public Object {
 	GDCLASS(PhysicsSystem2D, Object);
 private:
 	static PhysicsSystem2D *singleton;
+	Vector<RID> physics_bodies;
+	void _on_transform_removed(uint64_t p_entity);
 protected:
 	static void _bind_methods();
 public:
 	static PhysicsSystem2D *get_singleton();
 	void process_physics_updates();
 	
+	void register_entity_physics(int p_entity_id, RID p_shape, RID p_space);
+	void unregister_entity_physics(int p_entity_id);
+
 	// 2D Equivalent of move_and_slide implemented natively.
 	void solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_velocity);
 	PhysicsSystem2D();

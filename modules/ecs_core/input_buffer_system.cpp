@@ -31,6 +31,7 @@
 #include "input_buffer_system.h"
 #include "entity_manager.h"
 #include "core/input/input.h"
+#include "core/templates/vector.h"
 
 InputBufferSystem *InputBufferSystem::singleton = nullptr;
 

@@ -30,6 +30,7 @@
 
 #include "animation_system.h"
 #include "entity_manager.h"
+#include "core/templates/vector.h"
 
 AnimationSystem *AnimationSystem::singleton = nullptr;
 
