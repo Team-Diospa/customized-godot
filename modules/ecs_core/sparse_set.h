@@ -73,12 +73,15 @@ public:
 		RWLockWrite w(lock);
 		uint32_t index = get_index(p_entity);
 		if (index >= (uint32_t)sparse.size()) {
-			int old_size = sparse.size();
+			uint32_t old_size = (uint32_t)sparse.size();
 			// Geometric growth to avoid O(N) reallocations
-			// Fixed signed/unsigned mismatch for Absolute Zen certification
-			uint32_t new_size = MAX(index + 1, (uint32_t)old_size * 2);
+			// Fixed signed/unsigned mismatch for Absolute Zen certification (avoiding MAX macro issues)
+			uint32_t growth_target = old_size * 2;
+			uint32_t required_size = index + 1;
+			uint32_t new_size = (required_size > growth_target) ? required_size : growth_target;
+			
 			sparse.resize(new_size);
-			for (int i = old_size; i < sparse.size(); i++) {
+			for (uint32_t i = old_size; i < (uint32_t)sparse.size(); i++) {
 				sparse.write[i] = (uint32_t)-1;
 			}
 		}
@@ -106,6 +109,7 @@ public:
 
 	void remove(uint64_t p_entity) override {
 		RWLockWrite w(lock);
+		DEV_ASSERT(has_internal(p_entity));
 		if (!has_internal(p_entity)) {
 			return;
 		}
@@ -150,6 +154,7 @@ private:
 public:
 	T &get(uint64_t p_entity) {
 		RWLockRead r(lock);
+		DEV_ASSERT(has_internal(p_entity));
 		return components.write[sparse[get_index(p_entity)]];
 	}
 
