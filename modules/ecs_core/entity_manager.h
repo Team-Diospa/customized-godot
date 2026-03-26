@@ -46,9 +46,31 @@
 struct Transform2DComponent {
 	float x, y, rotation;
 	float scale_x = 1.0f, scale_y = 1.0f;
+	Transform2DComponent() : x(0), y(0), rotation(0) {}
+	Transform2DComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::TRANSFORM2D) {
+			Transform2D t = p_var;
+			x = t.get_origin().x; y = t.get_origin().y; rotation = t.get_rotation();
+			scale_x = t.get_scale().x; scale_y = t.get_scale().y;
+		} else {
+			x = y = rotation = 0; scale_x = scale_y = 1.0f;
+		}
+	}
 };
 struct TransformComponent {
 	float x, y, z;
+	TransformComponent() : x(0), y(0), z(0) {}
+	TransformComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::VECTOR3) {
+			Vector3 v = p_var;
+			x = v.x; y = v.y; z = v.z;
+		} else if (p_var.get_type() == Variant::TRANSFORM3D) {
+			Transform3D t = p_var;
+			x = t.origin.x; y = t.origin.y; z = t.origin.z;
+		} else {
+			x = y = z = 0;
+		}
+	}
 };
 
 // Phase 14 Production Hierarchy Components
@@ -57,24 +79,42 @@ struct ParentComponent {
 	float local_x, local_y, local_z;
 	float local_rot_x, local_rot_y, local_rot_z;
 	uint32_t depth = 0;
+	ParentComponent() : parent_id(0), local_x(0), local_y(0), local_z(0), local_rot_x(0), local_rot_y(0), local_rot_z(0), depth(0) {}
+	ParentComponent(const Variant &p_var) : parent_id(0), local_x(0), local_y(0), local_z(0), local_rot_x(0), local_rot_y(0), local_rot_z(0), depth(0) {
+		if (p_var.get_type() == Variant::INT) {
+			parent_id = p_var;
+		}
+	}
 };
 struct Parent2DComponent {
 	uint64_t parent_id;
 	float local_x, local_y, local_rot;
 	uint32_t depth = 0;
+	Parent2DComponent() : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {}
+	Parent2DComponent(const Variant &p_var) : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {
+		if (p_var.get_type() == Variant::INT) {
+			parent_id = p_var;
+		}
+	}
 };
 
 struct WorldTransformComponent {
 	float x, y, z;
 	float rot_x, rot_y, rot_z;
+	WorldTransformComponent() : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
+	 WorldTransformComponent(const Variant &p_var) : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
 };
 struct WorldTransform2DComponent {
 	float x, y, rotation;
+	WorldTransform2DComponent() : x(0), y(0), rotation(0) {}
+	 WorldTransform2DComponent(const Variant &p_var) : x(0), y(0), rotation(0) {}
 };
 
 // Phase 15 Final Certification Zen Components
 struct DebugComponent {
 	StringName label;
+	DebugComponent() : label("") {}
+	DebugComponent(const Variant &p_var) : label(p_var) {}
 };
 
 // Phase 12 Horror Infrastructure Components
@@ -83,11 +123,15 @@ struct AudioComponent {
 	float volume;
 	float pitch;
 	bool is_3d;
+	AudioComponent() : volume(1.0), pitch(1.0), is_3d(false) {}
+	AudioComponent(const Variant &p_var) : volume(1.0), pitch(1.0), is_3d(false) {}
 };
 struct InputComponent {
 	float move_x, move_y;
 	bool action_press;
 	bool action_just_press;
+	InputComponent() : move_x(0), move_y(0), action_press(false), action_just_press(false) {}
+	InputComponent(const Variant &p_var) : move_x(0), move_y(0), action_press(false), action_just_press(false) {}
 };
 
 // Phase 13 Visual Narrative Components
@@ -97,9 +141,13 @@ struct AnimationComponent {
 	int current_frame;
 	float time_accumulator;
 	float uv_offset_x, uv_offset_y;
+	AnimationComponent() : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
+	AnimationComponent(const Variant &p_var) : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
 };
 struct ShaderDataComponent {
 	float data[8];
+	ShaderDataComponent() { for(int i=0; i<8; i++) data[i]=0; }
+	ShaderDataComponent(const Variant &p_var) { for(int i=0; i<8; i++) data[i]=0; }
 };
 
 class EntityManager : public Object {

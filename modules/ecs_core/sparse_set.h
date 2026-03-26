@@ -110,11 +110,15 @@ public:
 		}
 	}
 
+	void insert_untyped(uint64_t p_entity, const Variant &p_data) override {
+		insert(p_entity, T(p_data));
+	}
+
 	void set_untyped(uint64_t p_entity, const Variant &p_data) override {
 		RWLockWrite w(lock);
 		uint32_t index = get_index(p_entity);
 		if (has_internal(p_entity)) {
-			components.write[sparse[index]] = (T)p_data;
+			components.write[sparse[index]] = T(p_data);
 		}
 	}
 
