@@ -56,18 +56,33 @@ protected:
 	_FORCE_INLINE_ void _set_material(RID p_material) const { material = p_material; }
 	_FORCE_INLINE_ RID _get_material() const { return material; }
 	static void _bind_methods();
-	virtual bool _can_do_next_pass() const;
-	virtual bool _can_use_render_priority() const;
+	// C++ Virtual Interface (Soft Dispatch)
+	virtual RID _get_shader_rid() const { return RID(); }
+	virtual Shader::Mode _get_shader_mode() const { return (Shader::Mode)0; }
+	virtual bool _can_do_next_pass() const { return false; }
+	virtual bool _can_use_render_priority() const { return false; }
+
+	// Manual Script-Bridge Bridge (Bypasses broken generator)
+	_FORCE_INLINE_ bool _gdvirtual__get_shader_rid_call(RID &r_ret) const { r_ret = _get_shader_rid(); return true; }
+	_FORCE_INLINE_ bool _gdvirtual__get_shader_rid_overridden() const { return true; }
+	static _FORCE_INLINE_ MethodInfo _gdvirtual__get_shader_rid_get_method_info() { return MethodInfo(); }
+
+	_FORCE_INLINE_ bool _gdvirtual__get_shader_mode_call(Shader::Mode &r_ret) const { r_ret = _get_shader_mode(); return true; }
+	_FORCE_INLINE_ bool _gdvirtual__get_shader_mode_overridden() const { return true; }
+	static _FORCE_INLINE_ MethodInfo _gdvirtual__get_shader_mode_get_method_info() { return MethodInfo(); }
+
+	_FORCE_INLINE_ bool _gdvirtual__can_do_next_pass_call(bool &r_ret) const { r_ret = _can_do_next_pass(); return true; }
+	_FORCE_INLINE_ bool _gdvirtual__can_do_next_pass_overridden() const { return true; }
+	static _FORCE_INLINE_ MethodInfo _gdvirtual__can_do_next_pass_get_method_info() { return MethodInfo(); }
+
+	_FORCE_INLINE_ bool _gdvirtual__can_use_render_priority_call(bool &r_ret) const { r_ret = _can_use_render_priority(); return true; }
+	_FORCE_INLINE_ bool _gdvirtual__can_use_render_priority_overridden() const { return true; }
+	static _FORCE_INLINE_ MethodInfo _gdvirtual__can_use_render_priority_get_method_info() { return MethodInfo(); }
 
 	void _validate_property(PropertyInfo &p_property) const;
 
 	void _mark_ready();
 	void _mark_initialized(const Callable &p_add_to_dirty_list, const Callable &p_update_shader);
-
-	GDVIRTUAL0RC_REQUIRED(RID, _get_shader_rid)
-	GDVIRTUAL0RC_REQUIRED(Shader::Mode, _get_shader_mode)
-	// GDVIRTUAL0RC(bool, _can_do_next_pass)
-	// GDVIRTUAL0RC(bool, _can_use_render_priority)
 public:
 	enum {
 		RENDER_PRIORITY_MAX = RSE::MATERIAL_RENDER_PRIORITY_MAX,

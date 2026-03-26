@@ -128,26 +128,18 @@ void Material::inspect_native_shader_code() {
 }
 
 RID Material::get_shader_rid() const {
-	RID ret;
-	GDVIRTUAL_CALL(_get_shader_rid, ret);
-	return ret;
+	return _get_shader_rid();
 }
 Shader::Mode Material::get_shader_mode() const {
-	Shader::Mode ret = Shader::MODE_MAX;
-	GDVIRTUAL_CALL(_get_shader_mode, ret);
-	return ret;
+	return _get_shader_mode();
 }
 
 bool Material::_can_do_next_pass() const {
-	bool ret = false;
-	GDVIRTUAL_CALL(_can_do_next_pass, ret);
-	return ret;
+	return false;
 }
 
 bool Material::_can_use_render_priority() const {
-	bool ret = false;
-	GDVIRTUAL_CALL(_can_use_render_priority, ret);
-	return ret;
+	return false;
 }
 
 Ref<Resource> Material::create_placeholder() const {
@@ -174,10 +166,7 @@ void Material::_bind_methods() {
 	BIND_CONSTANT(RENDER_PRIORITY_MAX);
 	BIND_CONSTANT(RENDER_PRIORITY_MIN);
 
-	GDVIRTUAL_BIND(_get_shader_rid)
-	GDVIRTUAL_BIND(_get_shader_mode)
-	GDVIRTUAL_BIND(_can_do_next_pass)
-	GDVIRTUAL_BIND(_can_use_render_priority)
+	// Manual bindings synchronized with soft unrolled bridge.
 }
 
 Material::Material() {
