@@ -33,7 +33,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "core/object/class_db.h"
 #include "core/variant/variant.h"
-#include "core/variant/packed_arrays.h"
 #include "simd_math.h"
 
 RenderingSystem *RenderingSystem::singleton = nullptr;

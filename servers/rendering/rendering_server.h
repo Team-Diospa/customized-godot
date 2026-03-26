@@ -63,6 +63,18 @@ class RenderingDevice;
 
 class RenderingServer : public Object {
 	GDCLASS(RenderingServer, Object);
+public:
+	using ArrayType = RenderingServerEnums::ArrayType;
+	using PrimitiveType = RenderingServerEnums::PrimitiveType;
+	using MultimeshTransformFormat = RenderingServerEnums::MultimeshTransformFormat;
+	static constexpr ArrayType ARRAY_MAX = RenderingServerEnums::ARRAY_MAX;
+	static constexpr ArrayType ARRAY_VERTEX = RenderingServerEnums::ARRAY_VERTEX;
+	static constexpr ArrayType ARRAY_TEX_UV = RenderingServerEnums::ARRAY_TEX_UV;
+	static constexpr ArrayType ARRAY_INDEX = RenderingServerEnums::ARRAY_INDEX;
+	static constexpr PrimitiveType PRIMITIVE_TRIANGLES = RenderingServerEnums::PRIMITIVE_TRIANGLES;
+	static constexpr MultimeshTransformFormat MULTIMESH_TRANSFORM_2D = RenderingServerEnums::MULTIMESH_TRANSFORM_2D;
+	static constexpr MultimeshTransformFormat MULTIMESH_TRANSFORM_3D = RenderingServerEnums::MULTIMESH_TRANSFORM_3D;
+	static constexpr int MULTIMESH_CUSTOM_DATA_FLOAT = 1;
 
 	static RenderingServer *singleton;
 

@@ -38,13 +38,13 @@
 #include "ecs_serializer.h"
 #include "entity_manager.h"
 #include "hierarchy_system.h"
-// Phase 10 & 11 Integrations
-#include "animation_system.h"
-#include "audio_system.h"
 #include "input_buffer_system.h"
 #include "physics_system_2d.h"
+#include "rendering_system.h"
 #include "rendering_system_2d.h"
+#include "physics_system.h"
 #include "shader_data_system.h"
+#include "ecs_frame_allocator.h"
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"

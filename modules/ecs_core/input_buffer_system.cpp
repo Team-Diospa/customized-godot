@@ -30,7 +30,7 @@
 
 #include "input_buffer_system.h"
 #include "entity_manager.h"
-#include "core/os/input.h"
+#include "core/input/input.h"
 
 InputBufferSystem *InputBufferSystem::singleton = nullptr;
 

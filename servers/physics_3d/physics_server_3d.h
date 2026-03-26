@@ -564,6 +564,8 @@ public:
 		real_t collision_depth = 0.0;
 		real_t collision_safe_fraction = 0.0;
 		real_t collision_unsafe_fraction = 0.0;
+		Vector3 collision_point;
+		Vector3 collision_normal;
 
 		static const int MAX_COLLISIONS = 32;
 		MotionCollision collisions[MAX_COLLISIONS];

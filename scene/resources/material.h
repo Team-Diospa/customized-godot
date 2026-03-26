@@ -66,8 +66,8 @@ protected:
 
 	GDVIRTUAL0RC_REQUIRED(RID, _get_shader_rid)
 	GDVIRTUAL0RC_REQUIRED(Shader::Mode, _get_shader_mode)
-	GDVIRTUAL0RC(bool, _can_do_next_pass)
-	GDVIRTUAL0RC(bool, _can_use_render_priority)
+	// GDVIRTUAL0RC(bool, _can_do_next_pass)
+	// GDVIRTUAL0RC(bool, _can_use_render_priority)
 public:
 	enum {
 		RENDER_PRIORITY_MAX = RSE::MATERIAL_RENDER_PRIORITY_MAX,

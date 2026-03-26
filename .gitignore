@@ -395,3 +395,10 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 *.generated.props
+
+#######################################
+### Local IDE Stabilization (Antigravity) ###
+#######################################
+core/zlib.h
+core/extension/gdextension_interface.gen.h
+core/object/gdvirtual.gen.h
