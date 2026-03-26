@@ -131,7 +131,15 @@ struct AudioComponent {
 	bool is_3d;
 	AudioComponent() : volume(1.0), pitch(1.0), is_3d(false) {}
 	AudioComponent(RID p_rid, float p_vol = 1.0f, float p_pitch = 1.0f, bool p_3d = false) : stream_rid(p_rid), volume(p_vol), pitch(p_pitch), is_3d(p_3d) {}
-	AudioComponent(const Variant &p_var) : volume(1.0), pitch(1.0), is_3d(false) {}
+	AudioComponent(const Variant &p_var) : volume(1.0), pitch(1.0), is_3d(false) {
+		if (p_var.get_type() == Variant::DICTIONARY) {
+			Dictionary d = p_var;
+			if (d.has("volume")) volume = d["volume"];
+			if (d.has("pitch")) pitch = d["pitch"];
+			if (d.has("is_3d")) is_3d = d["is_3d"];
+			if (d.has("stream_rid")) stream_rid = d["stream_rid"];
+		}
+	}
 };
 struct InputComponent {
 	float move_x, move_y;
@@ -139,7 +147,17 @@ struct InputComponent {
 	bool action_just_press;
 	InputComponent() : move_x(0), move_y(0), action_press(false), action_just_press(false) {}
 	InputComponent(float p_mx, float p_my, bool p_press = false, bool p_just = false) : move_x(p_mx), move_y(p_my), action_press(p_press), action_just_press(p_just) {}
-	InputComponent(const Variant &p_var) : move_x(0), move_y(0), action_press(false), action_just_press(false) {}
+	InputComponent(const Variant &p_var) : move_x(0), move_y(0), action_press(false), action_just_press(false) {
+		if (p_var.get_type() == Variant::VECTOR2) {
+			Vector2 v = p_var;
+			move_x = v.x; move_y = v.y;
+		} else if (p_var.get_type() == Variant::DICTIONARY) {
+			Dictionary d = p_var;
+			if (d.has("move_x")) move_x = d["move_x"];
+			if (d.has("move_y")) move_y = d["move_y"];
+			if (d.has("action_press")) action_press = d["action_press"];
+		}
+	}
 };
 
 // Phase 13 Visual Narrative Components
@@ -151,7 +169,14 @@ struct AnimationComponent {
 	float uv_offset_x, uv_offset_y;
 	AnimationComponent() : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
 	AnimationComponent(float p_fps, int p_total, int p_current = 0) : fps(p_fps), total_frames(p_total), current_frame(p_current), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
-	AnimationComponent(const Variant &p_var) : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
+	AnimationComponent(const Variant &p_var) : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {
+		if (p_var.get_type() == Variant::DICTIONARY) {
+			Dictionary d = p_var;
+			if (d.has("fps")) fps = d["fps"];
+			if (d.has("total_frames")) total_frames = d["total_frames"];
+			if (d.has("current_frame")) current_frame = d["current_frame"];
+		}
+	}
 };
 struct ShaderDataComponent {
 	float data[8];
@@ -163,6 +188,12 @@ struct ShaderDataComponent {
 	ShaderDataComponent(const Variant &p_var) {
 		for (int i = 0; i < 8; i++) {
 			data[i] = 0;
+		}
+		if (p_var.get_type() == Variant::PACKED_FLOAT32_ARRAY) {
+			PackedFloat32Array arr = p_var;
+			for (int i = 0; i < MIN(8, arr.size()); i++) {
+				data[i] = arr[i];
+			}
 		}
 	}
 };
