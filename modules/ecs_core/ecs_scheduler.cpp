@@ -30,6 +30,7 @@
 
 #include "ecs_scheduler.h"
 #include "core/object/worker_thread_pool.h"
+#include "core/os/os.h"
 #include "core/config/engine.h"
 #include "core/object/callable_mp.h"
 #include "core/variant/callable.h"
@@ -56,10 +57,13 @@ ECSScheduler *ECSScheduler::get_singleton() { return singleton; }
 void ECSScheduler::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_process_system", "system"), &ECSScheduler::register_process_system);
 	ClassDB::bind_method(D_METHOD("register_physics_system", "system"), &ECSScheduler::register_physics_system);
+	ClassDB::bind_method(D_METHOD("get_last_frame_usec"), &ECSScheduler::get_last_frame_usec);
 }
 
 void ECSScheduler::register_process_system(const Callable &p_system) { process_systems.push_back(p_system); }
 void ECSScheduler::register_physics_system(const Callable &p_system) { physics_process_systems.push_back(p_system); }
+
+uint64_t ECSScheduler::get_last_frame_usec() const { return last_frame_usec; }
 
 ECSScheduler::ECSScheduler() {
 	singleton = this;
@@ -115,6 +119,7 @@ void ECSScheduler::_notification(int p_what) {
 	}
 	
 	if (p_what == Node::NOTIFICATION_PROCESS) {
+		uint64_t begin_t = OS::get_singleton()->get_ticks_usec();
 		// 1. Parallel Hierarchy Update
 		EntityManager *em = EntityManager::get_singleton();
 		HierarchySystem *hs = HierarchySystem::get_singleton();
@@ -143,6 +148,8 @@ void ECSScheduler::_notification(int p_what) {
 		if (ECSCommandBuffer::get_singleton()) {
 			ECSCommandBuffer::get_singleton()->execute_deferred_commands();
 		}
+
+		last_frame_usec = OS::get_singleton()->get_ticks_usec() - begin_t;
 	} else if (p_what == Node::NOTIFICATION_PHYSICS_PROCESS) {
 		for (int i = 0; i < physics_process_systems.size(); i++) {
 			Variant ret; Callable::CallError err;

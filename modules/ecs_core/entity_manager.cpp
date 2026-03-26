@@ -119,3 +119,23 @@ bool EntityManager::is_entity_valid(uint64_t p_entity_id) {
 	
 	return generations[index] == get_entity_generation(p_entity_id);
 }
+
+void EntityManager::set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z) {
+	if (has_component<TransformComponent>(p_entity_id)) {
+		TransformComponent &t = get_component<TransformComponent>(p_entity_id);
+		t.x = p_x;
+		t.y = p_y;
+		t.z = p_z;
+	}
+}
+
+#include "ecs_entity_proxy.h"
+
+Object *EntityManager::get_entity_proxy(uint64_t p_entity) {
+	if (!is_entity_valid(p_entity)) {
+		return nullptr;
+	}
+	ECSEntityProxy *proxy = memnew(ECSEntityProxy);
+	proxy->set_entity(p_entity);
+	return proxy;
+}

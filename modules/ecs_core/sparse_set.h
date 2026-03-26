@@ -34,6 +34,7 @@
 #include "core/templates/vector.h"
 #include "core/variant/variant.h"
 #include "core/variant/callable.h"
+#include "core/os/rw_lock.h"
 
 // Defines a 64-bit null check instead of 32-bit limits.
 const uint64_t NULL_ENTITY = 0xFFFFFFFFFFFFFFFF;
@@ -57,6 +58,8 @@ private:
 	// Component Lifecycle Observer Nodes implicitly notifying Servers
 	Vector<Callable> on_added_observers;
 	Vector<Callable> on_removed_observers;
+	
+	mutable RWLock lock;
 
 	inline uint32_t get_index(uint64_t p_entity) const { return (uint32_t)(p_entity & 0xFFFFFFFF); }
 
@@ -67,11 +70,13 @@ public:
 	void unregister_on_removed(const Callable &p_callable) { on_removed_observers.erase(p_callable); }
 
 	void insert(uint64_t p_entity, const T &p_component) {
+		RWLockWrite w(lock);
 		uint32_t index = get_index(p_entity);
 		if (index >= (uint32_t)sparse.size()) {
 			int old_size = sparse.size();
 			// Geometric growth to avoid O(N) reallocations
-			int new_size = MAX(index + 1, old_size * 2);
+			// Fixed signed/unsigned mismatch for Absolute Zen certification
+			uint32_t new_size = MAX(index + 1, (uint32_t)old_size * 2);
 			sparse.resize(new_size);
 			for (int i = old_size; i < sparse.size(); i++) {
 				sparse.write[i] = (uint32_t)-1;
@@ -100,7 +105,8 @@ public:
 	}
 
 	void remove(uint64_t p_entity) override {
-		if (!has(p_entity)) {
+		RWLockWrite w(lock);
+		if (!has_internal(p_entity)) {
 			return;
 		}
 
@@ -131,16 +137,25 @@ public:
 	}
 
 	bool has(uint64_t p_entity) const override {
+		RWLockRead r(lock);
+		return has_internal(p_entity);
+	}
+
+private:
+	bool has_internal(uint64_t p_entity) const {
 		uint32_t index = get_index(p_entity);
 		return index < (uint32_t)sparse.size() && sparse[index] != (uint32_t)-1 && sparse[index] < (uint32_t)dense.size() && dense[sparse[index]] == p_entity;
 	}
 
+public:
 	T &get(uint64_t p_entity) {
+		RWLockRead r(lock);
 		return components.write[sparse[get_index(p_entity)]];
 	}
 
 	template <typename Compare>
 	void sort_custom(Compare p_compare) {
+		RWLockWrite w(lock);
 		int n = dense.size();
 		if (n <= 1) {
 			return;
@@ -168,7 +183,13 @@ public:
 		}
 	}
 
-	int size() const override { return dense.size(); }
+	int size() const override { 
+		RWLockRead r(lock);
+		return dense.size(); 
+	}
 	const Vector<uint64_t>& get_dense_raw() const override { return dense; }
 	Vector<T>& get_components() { return components; }
+	
+	// Thread-safe raw access for batch processing
+	RWLock &get_lock() const { return lock; }
 };

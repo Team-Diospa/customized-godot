@@ -188,6 +188,8 @@ public:
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
 	
+	Object *get_entity_proxy(uint64_t p_entity);
+	
 	EntityManager();
 	~EntityManager();
 };

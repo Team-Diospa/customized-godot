@@ -45,6 +45,8 @@ private:
 
 	Vector<Callable> process_systems;
 	Vector<Callable> physics_process_systems;
+	
+	uint64_t last_frame_usec = 0;
 
 protected:
 	static void _bind_methods();
@@ -64,6 +66,8 @@ public:
 	// The open extension loop registering specific generic callbacks gracefully
 	void register_process_system(const Callable &p_system);
 	void register_physics_system(const Callable &p_system);
+
+	uint64_t get_last_frame_usec() const;
 
 	ECSScheduler();
 	~ECSScheduler();

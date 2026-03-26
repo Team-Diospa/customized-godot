@@ -45,6 +45,7 @@
 #include "physics_system.h"
 #include "shader_data_system.h"
 #include "ecs_frame_allocator.h"
+#include "ecs_entity_proxy.h"
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
@@ -86,6 +87,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ClassDB::register_class<InputBufferSystem>();
 	ClassDB::register_class<AnimationSystem>();
 	ClassDB::register_class<ShaderDataSystem>();
+	ClassDB::register_class<ECSEntityProxy>();
 
 	ptr_entity_manager = memnew(EntityManager);
 	ptr_ecs_serializer = memnew(ECSSerializer);
