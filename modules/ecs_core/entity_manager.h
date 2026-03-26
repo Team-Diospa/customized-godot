@@ -47,6 +47,7 @@ struct Transform2DComponent {
 	float x, y, rotation;
 	float scale_x = 1.0f, scale_y = 1.0f;
 	Transform2DComponent() : x(0), y(0), rotation(0) {}
+	Transform2DComponent(float p_x, float p_y, float p_rot, float p_sx = 1.0f, float p_sy = 1.0f) : x(p_x), y(p_y), rotation(p_rot), scale_x(p_sx), scale_y(p_sy) {}
 	Transform2DComponent(const Variant &p_var) {
 		if (p_var.get_type() == Variant::TRANSFORM2D) {
 			Transform2D t = p_var;
@@ -60,6 +61,7 @@ struct Transform2DComponent {
 struct TransformComponent {
 	float x, y, z;
 	TransformComponent() : x(0), y(0), z(0) {}
+	TransformComponent(float p_x, float p_y, float p_z) : x(p_x), y(p_y), z(p_z) {}
 	TransformComponent(const Variant &p_var) {
 		if (p_var.get_type() == Variant::VECTOR3) {
 			Vector3 v = p_var;
@@ -80,6 +82,7 @@ struct ParentComponent {
 	float local_rot_x, local_rot_y, local_rot_z;
 	uint32_t depth = 0;
 	ParentComponent() : parent_id(0), local_x(0), local_y(0), local_z(0), local_rot_x(0), local_rot_y(0), local_rot_z(0), depth(0) {}
+	ParentComponent(uint64_t p_id, float p_lx, float p_ly, float p_lz, float p_rx = 0, float p_ry = 0, float p_rz = 0, uint32_t p_depth = 0) : parent_id(p_id), local_x(p_lx), local_y(p_ly), local_z(p_lz), local_rot_x(p_rx), local_rot_y(p_ry), local_rot_z(p_rz), depth(p_depth) {}
 	ParentComponent(const Variant &p_var) : parent_id(0), local_x(0), local_y(0), local_z(0), local_rot_x(0), local_rot_y(0), local_rot_z(0), depth(0) {
 		if (p_var.get_type() == Variant::INT) {
 			parent_id = p_var;
@@ -91,6 +94,7 @@ struct Parent2DComponent {
 	float local_x, local_y, local_rot;
 	uint32_t depth = 0;
 	Parent2DComponent() : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {}
+	Parent2DComponent(uint64_t p_id, float p_lx, float p_ly, float p_rot, uint32_t p_depth = 0) : parent_id(p_id), local_x(p_lx), local_y(p_ly), local_rot(p_rot), depth(p_depth) {}
 	Parent2DComponent(const Variant &p_var) : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {
 		if (p_var.get_type() == Variant::INT) {
 			parent_id = p_var;
@@ -102,12 +106,14 @@ struct WorldTransformComponent {
 	float x, y, z;
 	float rot_x, rot_y, rot_z;
 	WorldTransformComponent() : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
-	 WorldTransformComponent(const Variant &p_var) : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
+	WorldTransformComponent(float p_x, float p_y, float p_z, float p_rx = 0, float p_ry = 0, float p_rz = 0) : x(p_x), y(p_y), z(p_z), rot_x(p_rx), rot_y(p_ry), rot_z(p_rz) {}
+	WorldTransformComponent(const Variant &p_var) : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
 };
 struct WorldTransform2DComponent {
 	float x, y, rotation;
 	WorldTransform2DComponent() : x(0), y(0), rotation(0) {}
-	 WorldTransform2DComponent(const Variant &p_var) : x(0), y(0), rotation(0) {}
+	WorldTransform2DComponent(float p_x, float p_y, float p_rot) : x(p_x), y(p_y), rotation(p_rot) {}
+	WorldTransform2DComponent(const Variant &p_var) : x(0), y(0), rotation(0) {}
 };
 
 // Phase 15 Final Certification Zen Components
@@ -124,6 +130,7 @@ struct AudioComponent {
 	float pitch;
 	bool is_3d;
 	AudioComponent() : volume(1.0), pitch(1.0), is_3d(false) {}
+	AudioComponent(RID p_rid, float p_vol = 1.0f, float p_pitch = 1.0f, bool p_3d = false) : stream_rid(p_rid), volume(p_vol), pitch(p_pitch), is_3d(p_3d) {}
 	AudioComponent(const Variant &p_var) : volume(1.0), pitch(1.0), is_3d(false) {}
 };
 struct InputComponent {
@@ -131,6 +138,7 @@ struct InputComponent {
 	bool action_press;
 	bool action_just_press;
 	InputComponent() : move_x(0), move_y(0), action_press(false), action_just_press(false) {}
+	InputComponent(float p_mx, float p_my, bool p_press = false, bool p_just = false) : move_x(p_mx), move_y(p_my), action_press(p_press), action_just_press(p_just) {}
 	InputComponent(const Variant &p_var) : move_x(0), move_y(0), action_press(false), action_just_press(false) {}
 };
 
@@ -142,6 +150,7 @@ struct AnimationComponent {
 	float time_accumulator;
 	float uv_offset_x, uv_offset_y;
 	AnimationComponent() : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
+	AnimationComponent(float p_fps, int p_total, int p_current = 0) : fps(p_fps), total_frames(p_total), current_frame(p_current), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
 	AnimationComponent(const Variant &p_var) : fps(0), total_frames(0), current_frame(0), time_accumulator(0), uv_offset_x(0), uv_offset_y(0) {}
 };
 struct ShaderDataComponent {
