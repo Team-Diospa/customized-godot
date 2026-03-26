@@ -106,19 +106,19 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ptr_ecs_scheduler = memnew(ECSScheduler);
 	ptr_ecs_command_buffer = memnew(ECSCommandBuffer);
 
-	Engine::get_singleton()->add_singleton(Engine::Singleton("EntityManager", EntityManager::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSPrefabBridge", ECSPrefabBridge::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSSerializer", ECSSerializer::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("RenderingSystem", RenderingSystem::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("RenderingSystem2D", RenderingSystem2D::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsSystem", PhysicsSystem::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("HierarchySystem", HierarchySystem::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSScheduler", ECSScheduler::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsSystem2D", PhysicsSystem2D::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("AudioSystem", AudioSystem::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("InputBufferSystem", InputBufferSystem::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("AnimationSystem", AnimationSystem::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("ShaderDataSystem", ShaderDataSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("EntityManager", (Object *)EntityManager::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSPrefabBridge", (Object *)ECSPrefabBridge::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSSerializer", (Object *)ECSSerializer::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("RenderingSystem", (Object *)RenderingSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("RenderingSystem2D", (Object *)RenderingSystem2D::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsSystem", (Object *)PhysicsSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("HierarchySystem", (Object *)HierarchySystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSScheduler", (Object *)ECSScheduler::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsSystem2D", (Object *)PhysicsSystem2D::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("AudioSystem", (Object *)AudioSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("InputBufferSystem", (Object *)InputBufferSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("AnimationSystem", (Object *)AnimationSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("ShaderDataSystem", (Object *)ShaderDataSystem::get_singleton()));
 
 	ptr_ecs_frame_allocator = memnew(ecs::ECSFrameAllocator);
 	ptr_ecs_frame_allocator->initialize(1024 * 1024 * 4); // 4MB Buffer

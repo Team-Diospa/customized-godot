@@ -33,6 +33,7 @@
 #include "animation_system.h"
 #include "audio_system.h"
 #include "ecs_command_buffer.h"
+#include "ecs_frame_allocator.h"
 #include "entity_manager.h"
 #include "hierarchy_system.h"
 #include "input_buffer_system.h"
@@ -43,7 +44,6 @@
 #include "shader_data_system.h"
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
@@ -59,6 +59,7 @@ ECSScheduler *ECSScheduler::get_singleton() {
 
 void ECSScheduler::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_process_system", "system"), &ECSScheduler::register_process_system);
+	ClassDB::bind_method(D_METHOD("get_system_timings"), &ECSScheduler::get_system_timings);
 	ClassDB::bind_method(D_METHOD("register_physics_system", "system"), &ECSScheduler::register_physics_system);
 	ClassDB::bind_method(D_METHOD("get_last_frame_usec"), &ECSScheduler::get_last_frame_usec);
 }
@@ -74,41 +75,17 @@ uint64_t ECSScheduler::get_last_frame_usec() const {
 	return last_frame_usec;
 }
 
+Dictionary ECSScheduler::get_system_timings() const {
+	return system_timings;
+}
+
 ECSScheduler::ECSScheduler() {
 	singleton = this;
 	set_process(true);
 	set_physics_process(true);
 
-	// Initial Registration of Core natively threaded logics, decoupling execution directly from the loop implementation structurally.
-	// Natively parallelized in _notification - no need for duplicate registration
-
-	if (RenderingSystem::get_singleton()) {
-		register_process_system(callable_mp(RenderingSystem::get_singleton(), &RenderingSystem::process_render_updates));
-	}
-	if (RenderingSystem2D::get_singleton()) {
-		register_process_system(callable_mp(RenderingSystem2D::get_singleton(), &RenderingSystem2D::process_render_updates));
-	}
-
-	if (PhysicsSystem::get_singleton()) {
-		register_physics_system(callable_mp(PhysicsSystem::get_singleton(), &PhysicsSystem::process_physics_updates));
-	}
-	if (PhysicsSystem2D::get_singleton()) {
-		register_physics_system(callable_mp(PhysicsSystem2D::get_singleton(), &PhysicsSystem2D::process_physics_updates));
-	}
-
-	if (AudioSystem::get_singleton()) {
-		register_process_system(callable_mp(AudioSystem::get_singleton(), &AudioSystem::process_audio_updates));
-	}
-	if (InputBufferSystem::get_singleton()) {
-		register_process_system(callable_mp(InputBufferSystem::get_singleton(), &InputBufferSystem::process_input_buffer));
-	}
-
-	if (AnimationSystem::get_singleton()) {
-		register_process_system(callable_mp(AnimationSystem::get_singleton(), &AnimationSystem::process_animation_updates));
-	}
-	if (ShaderDataSystem::get_singleton()) {
-		register_process_system(callable_mp(ShaderDataSystem::get_singleton(), &ShaderDataSystem::update_horrror_params));
-	}
+	// Natively parallelized and dispatched in _notification to avoid Callable overhead.
+	// Generic systems can still be registered via Callable for flexibility.
 }
 
 ECSScheduler::~ECSScheduler() {
@@ -148,7 +125,41 @@ void ECSScheduler::_notification(int p_what) {
 			}
 		}
 
-		// 2. Generic Process Systems
+		// 2. Core Native Process Systems (Direct Dispatch)
+		uint64_t t_now;
+
+		if (RenderingSystem::get_singleton()) {
+			t_now = OS::get_singleton()->get_ticks_usec();
+			RenderingSystem::get_singleton()->process_render_updates();
+			system_timings["RenderingSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
+		}
+		if (RenderingSystem2D::get_singleton()) {
+			t_now = OS::get_singleton()->get_ticks_usec();
+			RenderingSystem2D::get_singleton()->process_render_updates();
+			system_timings["RenderingSystem2D"] = OS::get_singleton()->get_ticks_usec() - t_now;
+		}
+		if (AudioSystem::get_singleton()) {
+			t_now = OS::get_singleton()->get_ticks_usec();
+			AudioSystem::get_singleton()->process_audio_updates();
+			system_timings["AudioSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
+		}
+		if (InputBufferSystem::get_singleton()) {
+			t_now = OS::get_singleton()->get_ticks_usec();
+			InputBufferSystem::get_singleton()->process_input_buffer();
+			system_timings["InputBufferSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
+		}
+		if (AnimationSystem::get_singleton()) {
+			t_now = OS::get_singleton()->get_ticks_usec();
+			AnimationSystem::get_singleton()->process_animation_updates(Engine::get_singleton()->get_process_step());
+			system_timings["AnimationSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
+		}
+		if (ShaderDataSystem::get_singleton()) {
+			t_now = OS::get_singleton()->get_ticks_usec();
+			ShaderDataSystem::get_singleton()->update_horrror_params();
+			system_timings["ShaderDataSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
+		}
+
+		// 3. Generic Process Systems (Callable Dispatch)
 		for (int i = 0; i < process_systems.size(); i++) {
 			Variant ret;
 			Callable::CallError err;
@@ -159,8 +170,21 @@ void ECSScheduler::_notification(int p_what) {
 			ECSCommandBuffer::get_singleton()->execute_deferred_commands();
 		}
 
+		if (ecs::ECSFrameAllocator::get_singleton()) {
+			ecs::ECSFrameAllocator::get_singleton()->reset_all_threads();
+		}
+
 		last_frame_usec = OS::get_singleton()->get_ticks_usec() - begin_t;
 	} else if (p_what == Node::NOTIFICATION_PHYSICS_PROCESS) {
+		// 1. Core Native Physics Systems (Direct Dispatch)
+		if (PhysicsSystem::get_singleton()) {
+			PhysicsSystem::get_singleton()->process_physics_updates();
+		}
+		if (PhysicsSystem2D::get_singleton()) {
+			PhysicsSystem2D::get_singleton()->process_physics_updates();
+		}
+
+		// 2. Generic Physics Systems (Callable Dispatch)
 		for (int i = 0; i < physics_process_systems.size(); i++) {
 			Variant ret;
 			Callable::CallError err;

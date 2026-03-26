@@ -134,14 +134,6 @@ Shader::Mode Material::get_shader_mode() const {
 	return _get_shader_mode();
 }
 
-bool Material::_can_do_next_pass() const {
-	return false;
-}
-
-bool Material::_can_use_render_priority() const {
-	return false;
-}
-
 Ref<Resource> Material::create_placeholder() const {
 	Ref<PlaceholderMaterial> placeholder;
 	placeholder.instantiate();

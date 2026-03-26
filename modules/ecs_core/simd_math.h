@@ -46,22 +46,49 @@ namespace ecs {
 /**
  * @brief Adds two arrays of 4 floats using SIMD.
  */
-inline void add_4f(const float *a, const float *b, float *out) {
+	inline void add_4f(const float *a, const float *b, float *out) {
 #if defined(ECS_USE_SSE)
-	__m128 va = _mm_loadu_ps(a);
-	__m128 vb = _mm_loadu_ps(b);
-	__m128 vr = _mm_add_ps(va, vb);
-	_mm_storeu_ps(out, vr);
+		_mm_storeu_ps(out, _mm_add_ps(_mm_loadu_ps(a), _mm_loadu_ps(b)));
 #elif defined(ECS_USE_NEON)
-	float32x4_t va = vld1q_f32(a);
-	float32x4_t vb = vld1q_f32(b);
-	float32x4_t vr = vaddq_f32(va, vb);
-	vst1q_f32(out, vr);
+		vst1q_f32(out, vaddq_f32(vld1q_f32(a), vld1q_f32(b)));
 #else
-	for (int i = 0; i < 4; i++) {
-		out[i] = a[i] + b[i];
-	}
+		for (int i = 0; i < 4; i++) out[i] = a[i] + b[i];
 #endif
-}
+	}
+
+	inline void mul_4f(const float *a, const float *b, float *out) {
+#if defined(ECS_USE_SSE)
+		_mm_storeu_ps(out, _mm_mul_ps(_mm_loadu_ps(a), _mm_loadu_ps(b)));
+#elif defined(ECS_USE_NEON)
+		vst1q_f32(out, vmulq_f32(vld1q_f32(a), vld1q_f32(b)));
+#else
+		for (int i = 0; i < 4; i++) out[i] = a[i] * b[i];
+#endif
+	}
+
+	inline void madd_4f(const float *a, const float *b, const float *c, float *out) {
+#if defined(ECS_USE_SSE)
+		_mm_storeu_ps(out, _mm_add_ps(_mm_mul_ps(_mm_loadu_ps(a), _mm_loadu_ps(b)), _mm_loadu_ps(c)));
+#elif defined(ECS_USE_NEON)
+		vst1q_f32(out, vmlaq_f32(vld1q_f32(c), vld1q_f32(a), vld1q_f32(b)));
+#else
+		for (int i = 0; i < 4; i++) out[i] = a[i] * b[i] + c[i];
+#endif
+	}
+
+	inline void lerp_4f(const float *a, const float *b, float t, float *out) {
+#if defined(ECS_USE_SSE)
+		__m128 vt = _mm_set1_ps(t);
+		__m128 va = _mm_loadu_ps(a);
+		__m128 vb = _mm_loadu_ps(b);
+		_mm_storeu_ps(out, _mm_add_ps(va, _mm_mul_ps(vt, _mm_sub_ps(vb, va))));
+#elif defined(ECS_USE_NEON)
+		float32x4_t va = vld1q_f32(a);
+		float32x4_t vb = vld1q_f32(b);
+		vst1q_f32(out, vaddq_f32(va, vmulq_n_f32(vsubq_f32(vb, va), t)));
+#else
+		for (int i = 0; i < 4; i++) out[i] = a[i] + (b[i] - a[i]) * t;
+#endif
+	}
 
 } // namespace ecs

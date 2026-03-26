@@ -46,13 +46,15 @@ class ECSCommandBuffer : public Object {
 public:
 	enum CommandType {
 		CMD_DESTROY_ENTITY,
-		CMD_REMOVE_COMPONENT
+		CMD_REMOVE_COMPONENT,
+		CMD_ADD_COMPONENT
 	};
 
 	struct Command {
 		CommandType type;
 		uint64_t entity_id;
 		StringName component_name;
+		Variant component_data;
 	};
 
 private:
@@ -70,6 +72,7 @@ public:
 	// Thread-safe pipeline insertion boundaries
 	void queue_destroy_entity(uint64_t p_entity_id);
 	void queue_remove_component(uint64_t p_entity_id, const StringName &p_comp_name);
+	void queue_add_component(uint64_t p_entity_id, const StringName &p_comp_name, const Variant &p_data);
 
 	// Natively executed exclusively at the exact conclusion of Engine ticks ensuring read safety.
 	void execute_deferred_commands();

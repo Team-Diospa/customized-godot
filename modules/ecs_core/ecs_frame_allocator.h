@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "core/templates/safe_refcount.h"
 #include "core/os/memory.h"
 #include "core/typedefs.h"
 
@@ -39,9 +40,16 @@ namespace ecs {
  * @brief Zero-allocation linear buffer for temporary frame data.
  */
 class ECSFrameAllocator {
-	uint8_t *buffer = nullptr;
-	uint32_t capacity = 0;
-	uint32_t offset = 0;
+	struct ThreadBuffer {
+		uint8_t *ptr = nullptr;
+		uint32_t offset = 0;
+	};
+
+	static thread_local ThreadBuffer tls_buffer;
+	static uint8_t *global_buffer;
+	static uint32_t global_capacity;
+	static uint32_t thread_chunk_size;
+	static SafeNumeric<uint32_t> next_chunk_idx;
 
 	static ECSFrameAllocator *singleton;
 
@@ -49,31 +57,43 @@ public:
 	static ECSFrameAllocator *get_singleton() { return singleton; }
 
 	void *alloc(uint32_t p_size) {
-		uint32_t aligned_size = (p_size + 15) & ~15; // 16-byte alignment
-		if (offset + aligned_size > capacity) {
-			return nullptr;
+		uint32_t aligned_size = (p_size + 15) & ~15;
+
+		if (unlikely(!tls_buffer.ptr)) {
+			// Pull a chunk from the global pool
+			uint32_t idx = next_chunk_idx.postincrement();
+			if (idx * thread_chunk_size >= global_capacity) {
+				return nullptr; // Out of memory
+			}
+			tls_buffer.ptr = global_buffer + (idx * thread_chunk_size);
+			tls_buffer.offset = 0;
 		}
 
-		void *ptr = buffer + offset;
-		offset += aligned_size;
+		if (tls_buffer.offset + aligned_size > thread_chunk_size) {
+			return nullptr; // TLS Chunk full
+		}
+
+		void *ptr = tls_buffer.ptr + tls_buffer.offset;
+		tls_buffer.offset += aligned_size;
 		return ptr;
 	}
 
-	void reset() {
-		offset = 0;
+	void reset_all_threads() {
+		next_chunk_idx.set(0);
 	}
 
-	void initialize(uint32_t p_capacity) {
-		capacity = p_capacity;
-		buffer = (uint8_t *)memalloc(capacity);
-		offset = 0;
+	void initialize(uint32_t p_total_capacity, uint32_t p_per_thread = 1024 * 1024) {
+		global_capacity = p_total_capacity;
+		thread_chunk_size = p_per_thread;
+		global_buffer = (uint8_t *)memalloc(global_capacity);
+		next_chunk_idx.set(0);
 	}
 
 	void finalize() {
-		if (buffer) {
-			memfree(buffer);
+		if (global_buffer) {
+			memfree(global_buffer);
 		}
-		buffer = nullptr;
+		global_buffer = nullptr;
 	}
 
 	ECSFrameAllocator() { singleton = this; }

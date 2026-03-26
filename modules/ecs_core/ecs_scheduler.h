@@ -34,6 +34,7 @@
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
 #include "core/variant/callable.h"
+#include "core/variant/dictionary.h"
 #include "scene/main/node.h" // Keep this for Node inheritance
 
 // Abstract Registry evaluating pipelines dynamically via explicitly serialized Callable Arrays.
@@ -46,6 +47,7 @@ private:
 
 	Vector<Callable> process_systems;
 	Vector<Callable> physics_process_systems;
+	Dictionary system_timings;
 
 	uint64_t last_frame_usec = 0;
 
@@ -69,6 +71,7 @@ public:
 	void register_physics_system(const Callable &p_system);
 
 	uint64_t get_last_frame_usec() const;
+	Dictionary get_system_timings() const;
 
 	ECSScheduler();
 	~ECSScheduler();

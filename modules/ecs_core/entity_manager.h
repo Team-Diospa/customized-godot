@@ -118,6 +118,7 @@ private:
 	Vector<uint64_t> entity_masks;
 
 	Mutex entity_mutex;
+	Mutex registries_mutex;
 
 protected:
 	static void _bind_methods();
@@ -139,7 +140,13 @@ public:
 
 	static EntityManager *get_singleton();
 
+	// Global Lifecycle Listeners
+	// (Signals are emitted post-structural change for safety)
+	// Signal: "entity_created", uint64_t entity_id
+	// Signal: "entity_destroyed", uint64_t entity_id
+
 	uint64_t create_entity();
+	void create_entities_bulk(int p_count);
 	void destroy_entity(uint64_t p_entity_id);
 	bool is_entity_valid(uint64_t p_entity_id);
 
@@ -164,6 +171,7 @@ public:
 
 	template <typename T>
 	void register_component_type(const StringName &p_name, uint64_t p_bit = 0) {
+		MutexLock lock(registries_mutex);
 		if (!registries.has(p_name)) {
 			SparseSet<T> *set = memnew(SparseSet<T>);
 			registries[p_name] = set;
@@ -225,6 +233,8 @@ public:
 
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
+	void add_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data);
+	void update_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data);
 
 	Object *get_entity_proxy(uint64_t p_entity);
 

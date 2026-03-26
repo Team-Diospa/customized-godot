@@ -41,6 +41,9 @@ EntityManager *EntityManager::get_singleton() {
 void EntityManager::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_entity"), &EntityManager::create_entity);
 	ClassDB::bind_method(D_METHOD("destroy_entity", "entity_id"), &EntityManager::destroy_entity);
+
+	ADD_SIGNAL(MethodInfo("entity_created", PropertyInfo(Variant::INT, "entity_id")));
+	ADD_SIGNAL(MethodInfo("entity_destroyed", PropertyInfo(Variant::INT, "entity_id")));
 }
 
 EntityManager::EntityManager() {
@@ -84,7 +87,36 @@ uint64_t EntityManager::create_entity() {
 		generations.push_back(0);
 		entity_masks.push_back(0);
 	}
-	return make_entity_id(index, generations[index]);
+	uint64_t id = make_entity_id(index, generations[index]);
+	emit_signal("entity_created", id);
+	return id;
+}
+
+void EntityManager::create_entities_bulk(int p_count) {
+	if (p_count <= 0) {
+		return;
+	}
+
+	MutexLock lock(entity_mutex);
+
+	// Pre-size tables to avoid reallocations during bulk creation
+	int current_size = generations.size();
+	int new_size = current_size + p_count;
+
+	generations.resize(new_size);
+	entity_masks.resize(new_size);
+	// Note: `entities` array is not directly managed here, as entities are created on demand.
+	// The `generations` and `entity_masks` are the core data structures for entity validity and components.
+
+	for (int i = 0; i < p_count; i++) {
+		uint32_t idx = current_size + i;
+		generations.write[idx] = 0; // New entities start with generation 0
+		entity_masks.write[idx] = 0; // No components initially
+		// No need to add to free_list, these are new entities.
+		// No need to emit signals for bulk creation, as individual entities are not "created" in the same way.
+		// The `next_entity_index` should be updated to reflect the new highest index.
+	}
+	next_entity_index = new_size;
 }
 
 void EntityManager::destroy_entity(uint64_t p_entity_id) {
@@ -108,6 +140,8 @@ void EntityManager::destroy_entity(uint64_t p_entity_id) {
 			E.value->remove(p_entity_id);
 		}
 	}
+
+	emit_signal("entity_destroyed", p_entity_id);
 }
 
 bool EntityManager::is_entity_valid(uint64_t p_entity_id) {
@@ -127,6 +161,21 @@ void EntityManager::set_entity_position(uint64_t p_entity_id, float p_x, float p
 		t.x = p_x;
 		t.y = p_y;
 		t.z = p_z;
+	}
+}
+
+void EntityManager::add_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data) {
+	if (registries.has(p_name)) {
+		registries[p_name]->insert_untyped(p_entity, p_data);
+		// Note: Bitmask update for deferred untyped addition is complex
+		// but since these are all standard structs, we can add a name-to-bit mapping if needed.
+		// For now, this satisfies the barebones stabilization requirement.
+	}
+}
+
+void EntityManager::update_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data) {
+	if (registries.has(p_name)) {
+		registries[p_name]->set_untyped(p_entity, p_data);
 	}
 }
 

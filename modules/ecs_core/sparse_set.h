@@ -42,6 +42,8 @@ const uint64_t NULL_ENTITY = 0xFFFFFFFFFFFFFFFF;
 class ISparseSet {
 public:
 	virtual void remove(uint64_t p_entity) = 0;
+	virtual void insert_untyped(uint64_t p_entity, const Variant &p_data) = 0;
+	virtual void set_untyped(uint64_t p_entity, const Variant &p_data) = 0;
 	virtual bool has(uint64_t p_entity) const = 0;
 	virtual int size() const = 0;
 	virtual const Vector<uint64_t> &get_dense_raw() const = 0;
@@ -105,6 +107,14 @@ public:
 				Variant ret;
 				on_added_observers[i].callp(&argptr, 1, ret, err);
 			}
+		}
+	}
+
+	void set_untyped(uint64_t p_entity, const Variant &p_data) override {
+		RWLockWrite w(lock);
+		uint32_t index = get_index(p_entity);
+		if (has_internal(p_entity)) {
+			components.write[sparse[index]] = (T)p_data;
 		}
 	}
 

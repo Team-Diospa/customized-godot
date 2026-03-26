@@ -44,6 +44,8 @@ ECSCommandBuffer *ECSCommandBuffer::get_singleton() {
 
 void ECSCommandBuffer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("queue_destroy_entity", "entity_id"), &ECSCommandBuffer::queue_destroy_entity);
+	ClassDB::bind_method(D_METHOD("queue_remove_component", "entity_id", "component_name"), &ECSCommandBuffer::queue_remove_component);
+	ClassDB::bind_method(D_METHOD("queue_add_component", "entity_id", "component_name", "data"), &ECSCommandBuffer::queue_add_component);
 	ClassDB::bind_method(D_METHOD("execute_deferred_commands"), &ECSCommandBuffer::execute_deferred_commands);
 }
 
@@ -76,6 +78,17 @@ void ECSCommandBuffer::queue_remove_component(uint64_t p_entity_id, const String
 	mutex.unlock();
 }
 
+void ECSCommandBuffer::queue_add_component(uint64_t p_entity_id, const StringName &p_comp_name, const Variant &p_data) {
+	mutex.lock();
+	Command cmd;
+	cmd.type = CMD_ADD_COMPONENT;
+	cmd.entity_id = p_entity_id;
+	cmd.component_name = p_comp_name;
+	cmd.component_data = p_data;
+	command_queue.push_back(cmd);
+	mutex.unlock();
+}
+
 void ECSCommandBuffer::execute_deferred_commands() {
 	mutex.lock();
 	// Cache the queue locally to prevent infinite recursive injections
@@ -97,6 +110,8 @@ void ECSCommandBuffer::execute_deferred_commands() {
 			if (reg) {
 				reg->remove(cmd.entity_id);
 			}
+		} else if (cmd.type == CMD_ADD_COMPONENT) {
+			em->add_component_untyped(cmd.entity_id, cmd.component_name, cmd.component_data);
 		}
 	}
 }
