@@ -45,6 +45,9 @@ class HierarchySystem : public Object {
 	SparseSet<Parent2DComponent>* cache_parents_2d = nullptr;
 	SparseSet<WorldTransform2DComponent>* cache_worlds_2d = nullptr;
 
+	bool hierarchy_needs_sort = false;
+	bool hierarchy_2d_needs_sort = false;
+
 protected:
 	static void _bind_methods();
 
@@ -57,6 +60,12 @@ public:
 	// Multithreading Helpers
 	void process_hierarchy_chunk(uint32_t p_start, uint32_t p_count);
 	void process_hierarchy_2d_chunk(uint32_t p_start, uint32_t p_count);
+
+	void set_parent(uint64_t p_child, uint64_t p_parent);
+	void set_parent_2d(uint64_t p_child, uint64_t p_parent);
+
+	void fix_all_depths();
+	void fix_all_depths_2d();
 
 	HierarchySystem();
 	~HierarchySystem();

@@ -67,11 +67,7 @@ ECSScheduler::ECSScheduler() {
 	set_physics_process(true);
 
 	// Initial Registration of Core natively threaded logics, decoupling execution directly from the loop implementation structurally.
-	// Hierarchy must run BEFORE Render/Physics
-	if (HierarchySystem::get_singleton()) {
-		register_process_system(callable_mp(HierarchySystem::get_singleton(), &HierarchySystem::process_hierarchy_updates));
-		register_process_system(callable_mp(HierarchySystem::get_singleton(), &HierarchySystem::process_hierarchy_2d_updates));
-	}
+	// Natively parallelized in _notification - no need for duplicate registration
 
 	if (RenderingSystem::get_singleton()) {
 		register_process_system(callable_mp(RenderingSystem::get_singleton(), &RenderingSystem::process_render_updates));
@@ -123,9 +119,17 @@ void ECSScheduler::_notification(int p_what) {
 		EntityManager *em = EntityManager::get_singleton();
 		HierarchySystem *hs = HierarchySystem::get_singleton();
 		if (em && hs) {
-			uint32_t count = em->get_parents()->size();
-			if (count > 0) {
-				WorkerThreadPool::GroupID group = WorkerThreadPool::get_singleton()->add_native_group_task(_hierarchy_group_step, hs, count, 1024);
+			// 1.1 Parallel 3D Hierarchy
+			uint32_t count_3d = em->get_parents()->size();
+			if (count_3d > 0) {
+				WorkerThreadPool::GroupID group = WorkerThreadPool::get_singleton()->add_native_group_task(_hierarchy_group_step, hs, (count_3d + 1023) / 1024, 1);
+				WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group);
+			}
+
+			// 1.2 Parallel 2D Hierarchy
+			uint32_t count_2d = em->get_parents_2d()->size();
+			if (count_2d > 0) {
+				WorkerThreadPool::GroupID group = WorkerThreadPool::get_singleton()->add_native_group_task(_hierarchy_2d_group_step, hs, (count_2d + 1023) / 1024, 1);
 				WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group);
 			}
 		}

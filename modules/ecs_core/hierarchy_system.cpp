@@ -41,6 +41,10 @@ void HierarchySystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("process_hierarchy_updates"), &HierarchySystem::process_hierarchy_updates);
 	ClassDB::bind_method(D_METHOD("process_hierarchy_2d_updates"), &HierarchySystem::process_hierarchy_2d_updates);
 	ClassDB::bind_method(D_METHOD("process_hierarchy_chunk", "start", "count"), &HierarchySystem::process_hierarchy_chunk);
+	ClassDB::bind_method(D_METHOD("set_parent", "child", "parent"), &HierarchySystem::set_parent);
+	ClassDB::bind_method(D_METHOD("set_parent_2d", "child", "parent"), &HierarchySystem::set_parent_2d);
+	ClassDB::bind_method(D_METHOD("fix_all_depths"), &HierarchySystem::fix_all_depths);
+	ClassDB::bind_method(D_METHOD("fix_all_depths_2d"), &HierarchySystem::fix_all_depths_2d);
 }
 
 HierarchySystem::HierarchySystem() { singleton = this; }
@@ -65,11 +69,15 @@ void HierarchySystem::process_hierarchy_updates() {
 	if (!cache_parents || !cache_worlds || !cache_transforms) {
 		return;
 	}
+
+	if (hierarchy_needs_sort) {
+		cache_parents->sort_custom([](uint64_t e1, const ParentComponent &p1, uint64_t e2, const ParentComponent &p2) {
+			return p1.depth < p2.depth;
+		});
+		hierarchy_needs_sort = false;
+	}
 	
 	// Linear pass using cached pointers
-
-	// Linear pass: Updates world transform from parent
-	// Note: For deep nesting, we would need to sort or use multiple passes
 	const uint64_t *__restrict entities = cache_parents->get_dense_raw().ptr();
 	int size = cache_parents->size();
 
@@ -113,6 +121,13 @@ void HierarchySystem::process_hierarchy_2d_updates() {
 
 	if (!parents || !worlds || !transforms) {
 		return;
+	}
+
+	if (hierarchy_2d_needs_sort) {
+		parents->sort_custom([](uint64_t e1, const Parent2DComponent &p1, uint64_t e2, const Parent2DComponent &p2) {
+			return p1.depth < p2.depth;
+		});
+		hierarchy_2d_needs_sort = false;
 	}
 
 	const Vector<uint64_t> &entities = parents->get_dense_raw();
@@ -200,4 +215,95 @@ void HierarchySystem::process_hierarchy_2d_chunk(uint32_t p_start, uint32_t p_co
 			my_world.rotation = parent_world.rotation + p.local_rot;
 		}
 	}
+}
+void HierarchySystem::set_parent(uint64_t p_child, uint64_t p_parent) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em) {
+		return;
+	}
+
+	uint32_t depth = 0;
+	if (p_parent != 0 && em->has_component<ParentComponent>(p_parent)) {
+		depth = em->get_component<ParentComponent>(p_parent).depth + 1;
+	}
+
+	ParentComponent pc;
+	pc.parent_id = p_parent;
+	pc.depth = depth;
+	em->add_component(p_child, pc);
+	hierarchy_needs_sort = true;
+}
+
+void HierarchySystem::set_parent_2d(uint64_t p_child, uint64_t p_parent) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em) {
+		return;
+	}
+
+	uint32_t depth = 0;
+	if (p_parent != 0 && em->has_component<Parent2DComponent>(p_parent)) {
+		depth = em->get_component<Parent2DComponent>(p_parent).depth + 1;
+	}
+
+	Parent2DComponent pc;
+	pc.parent_id = p_parent;
+	pc.depth = depth;
+	em->add_component(p_child, pc);
+	hierarchy_2d_needs_sort = true;
+}
+
+void HierarchySystem::fix_all_depths() {
+	EntityManager *em = EntityManager::get_singleton();
+	SparseSet<ParentComponent> *parents = em->get_parents();
+	if (!parents) {
+		return;
+	}
+
+	bool changed = true;
+	int iterations = 0;
+	while (changed && iterations < 32) { // Max depth limit for safety
+		changed = false;
+		iterations++;
+		Vector<ParentComponent> &comps = parents->get_components();
+		for (int i = 0; i < comps.size(); i++) {
+			uint32_t new_depth = 0;
+			uint64_t pid = comps[i].parent_id;
+			if (pid != 0 && parents->has(pid)) {
+				new_depth = parents->get(pid).depth + 1;
+			}
+			if (comps[i].depth != new_depth) {
+				comps.write[i].depth = new_depth;
+				changed = true;
+			}
+		}
+	}
+	hierarchy_needs_sort = true;
+}
+
+void HierarchySystem::fix_all_depths_2d() {
+	EntityManager *em = EntityManager::get_singleton();
+	SparseSet<Parent2DComponent> *parents = em->get_parents_2d();
+	if (!parents) {
+		return;
+	}
+
+	bool changed = true;
+	int iterations = 0;
+	while (changed && iterations < 32) {
+		changed = false;
+		iterations++;
+		Vector<Parent2DComponent> &comps = parents->get_components();
+		for (int i = 0; i < comps.size(); i++) {
+			uint32_t new_depth = 0;
+			uint64_t pid = comps[i].parent_id;
+			if (pid != 0 && parents->has(pid)) {
+				new_depth = parents->get(pid).depth + 1;
+			}
+			if (comps[i].depth != new_depth) {
+				comps.write[i].depth = new_depth;
+				changed = true;
+			}
+		}
+	}
+	hierarchy_2d_needs_sort = true;
 }

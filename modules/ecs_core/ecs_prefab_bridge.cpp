@@ -30,6 +30,7 @@
 
 #include "ecs_prefab_bridge.h"
 #include "entity_manager.h"
+#include "hierarchy_system.h"
 #include "scene/main/node.h"
 #include "scene/3d/node_3d.h"
 #include "scene/2d/node_2d.h"
@@ -65,24 +66,29 @@ void _process_node_recursive(Node *p_node, uint64_t p_parent_entity) {
 	EntityManager *em = EntityManager::get_singleton();
 	uint64_t current_entity = em->create_entity();
 
-	// Map Parent
+	// Map Parent & Debug Label
+	DebugComponent dbg;
+	dbg.label = p_node->get_name();
+	em->add_component(current_entity, dbg);
+
 	if (p_parent_entity != 0) {
 		if (Node3D *n3d = Object::cast_to<Node3D>(p_node)) {
-			ParentComponent pcomp;
-			pcomp.parent_id = p_parent_entity;
+			HierarchySystem::get_singleton()->set_parent(current_entity, p_parent_entity);
+			
+			// Update local values (set_parent handles depth & sorting)
+			ParentComponent &pcomp = em->get_component<ParentComponent>(current_entity);
 			pcomp.local_x = n3d->get_position().x;
 			pcomp.local_y = n3d->get_position().y;
 			pcomp.local_z = n3d->get_position().z;
-			em->add_component(current_entity, pcomp);
 			
 			WorldTransformComponent w; // World Transform will be resolved by HierarchySystem
 			em->add_component(current_entity, w);
 		} else if (Node2D *n2d = Object::cast_to<Node2D>(p_node)) {
-			Parent2DComponent pcomp;
-			pcomp.parent_id = p_parent_entity;
+			HierarchySystem::get_singleton()->set_parent_2d(current_entity, p_parent_entity);
+			
+			Parent2DComponent &pcomp = em->get_component<Parent2DComponent>(current_entity);
 			pcomp.local_x = n2d->get_position().x;
 			pcomp.local_y = n2d->get_position().y;
-			em->add_component(current_entity, pcomp);
 			
 			WorldTransform2DComponent w;
 			em->add_component(current_entity, w);
@@ -128,6 +134,10 @@ uint64_t ECSPrefabBridge::spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_
 		t.y = n2d->get_position().y;
 		em->add_component(root_entity, t);
 	}
+
+	DebugComponent dbg;
+	dbg.label = root->get_name();
+	em->add_component(root_entity, dbg);
 
 	// Process children recursively
 	for (int i = 0; i < root->get_child_count(); i++) {

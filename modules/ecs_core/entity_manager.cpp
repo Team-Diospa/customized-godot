@@ -57,6 +57,7 @@ EntityManager::EntityManager() {
 	register_component_type<InputComponent>("InputComponent", BIT_INPUT);
 	register_component_type<AnimationComponent>("AnimationComponent", BIT_ANIMATION);
 	register_component_type<ShaderDataComponent>("ShaderDataComponent", BIT_SHADER_DATA);
+	register_component_type<DebugComponent>("DebugComponent", BIT_DEBUG);
 }
 
 EntityManager::~EntityManager() {

@@ -139,6 +139,35 @@ public:
 		return components.write[sparse[get_index(p_entity)]];
 	}
 
+	template <typename Compare>
+	void sort_custom(Compare p_compare) {
+		int n = dense.size();
+		if (n <= 1) {
+			return;
+		}
+
+		// Use a simple insertion sort for "bare-metal" simplicity, 
+		// but with direct component access for speed.
+		for (int i = 1; i < n; i++) {
+			uint64_t key_e = dense[i];
+			T key_c = components[i];
+			int j = i - 1;
+
+			while (j >= 0 && p_compare(key_e, key_c, dense[j], components[j])) {
+				dense.write[j + 1] = dense[j];
+				components.write[j + 1] = components[j];
+				j--;
+			}
+			dense.write[j + 1] = key_e;
+			components.write[j + 1] = key_c;
+		}
+
+		// Rebuild sparse indices
+		for (int i = 0; i < (int)dense.size(); i++) {
+			sparse.write[get_index(dense[i])] = i;
+		}
+	}
+
 	int size() const override { return dense.size(); }
 	const Vector<uint64_t>& get_dense_raw() const override { return dense; }
 	Vector<T>& get_components() { return components; }

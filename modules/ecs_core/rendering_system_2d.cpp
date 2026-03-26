@@ -109,8 +109,8 @@ void RenderingSystem2D::process_render_updates() {
 		return;
 	}
 
-	SparseSet<Transform2DComponent> *transforms = em->get_transforms_2d();
-	if (!transforms || transforms->get_dense_raw().size() == 0) {
+	SparseSet<WorldTransform2DComponent> *worlds = em->get_world_transforms_2d();
+	if (!worlds || worlds->get_dense_raw().size() == 0) {
 		return;
 	}
 
@@ -118,34 +118,30 @@ void RenderingSystem2D::process_render_updates() {
 	
 	SparseSet<AnimationComponent> *animations = em->get_animations();
 	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
-	SparseSet<WorldTransform2DComponent> *worlds = em->get_world_transforms_2d();
+	SparseSet<Transform2DComponent> *transforms = em->get_transforms_2d();
 
-	const Vector<uint64_t> &entities = transforms->get_dense_raw();
+	const Vector<uint64_t> &entities = worlds->get_dense_raw();
 	int count = entities.size();
 	
-	// We allocate with CUSTOM_DATA for Phase 13 glitching and animation
 	rs->multimesh_allocate_data(multimesh, count, RenderingServer::MULTIMESH_TRANSFORM_2D, RenderingServer::MULTIMESH_CUSTOM_DATA_FLOAT);
 
 	for (int i = 0; i < count; i++) {
 		uint64_t entity = entities[i];
-		Transform2DComponent &t = transforms->get(entity);
+		const WorldTransform2DComponent &w = worlds->get(entity);
 		
 		Transform2D xform;
-		if (worlds && worlds->has(entity)) {
-			WorldTransform2DComponent &w = worlds->get(entity);
-			xform.set_origin(Vector2(w.x, w.y));
-			xform.set_rotation(w.rotation);
-			xform.scale(Vector2(t.scale_x, t.scale_y));
-		} else {
-			xform.set_origin(Vector2(t.x, t.y));
-			xform.set_rotation(t.rotation);
+		xform.set_origin(Vector2(w.x, w.y));
+		xform.set_rotation(w.rotation);
+
+		if (transforms && transforms->has(entity)) {
+			const Transform2DComponent &t = transforms->get(entity);
 			xform.scale(Vector2(t.scale_x, t.scale_y));
 		}
 		
 		rs->multimesh_instance_set_transform_2d(multimesh, i, xform);
 
 		// Push Animation/Shader data to GPU CUSTOM_DATA buffer
-		Color custom_data(0, 0, 0, 0); // r=uv_x, g=uv_y, b=glitch, a=alpha
+		Color custom_data(0, 0, 0, 0); 
 		
 		if (animations && animations->has(entity)) {
 			AnimationComponent &anim = animations->get(entity);
@@ -155,8 +151,8 @@ void RenderingSystem2D::process_render_updates() {
 
 		if (shader_datas && shader_datas->has(entity)) {
 			ShaderDataComponent &sd = shader_datas->get(entity);
-			custom_data.b = sd.data[0]; // Convention: data[0] is glitch level
-			custom_data.a = sd.data[1]; // Convention: data[1] is opacity
+			custom_data.b = sd.data[0]; 
+			custom_data.a = sd.data[1]; 
 		}
 
 		rs->multimesh_instance_set_custom_data(multimesh, i, custom_data);

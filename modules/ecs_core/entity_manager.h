@@ -47,11 +47,14 @@ struct Transform2DComponent { float x, y, rotation; float scale_x = 1.0f, scale_
 struct TransformComponent { float x, y, z; };
 
 // Phase 14 Production Hierarchy Components
-struct ParentComponent { uint64_t parent_id; float local_x, local_y, local_z; float local_rot_x, local_rot_y, local_rot_z; };
-struct Parent2DComponent { uint64_t parent_id; float local_x, local_y, local_rot; };
+struct ParentComponent { uint64_t parent_id; float local_x, local_y, local_z; float local_rot_x, local_rot_y, local_rot_z; uint32_t depth = 0; };
+struct Parent2DComponent { uint64_t parent_id; float local_x, local_y, local_rot; uint32_t depth = 0; };
 
 struct WorldTransformComponent { float x, y, z; float rot_x, rot_y, rot_z; };
 struct WorldTransform2DComponent { float x, y, rotation; };
+
+// Phase 15 Final Certification Zen Components
+struct DebugComponent { StringName label; };
 
 // Phase 12 Horror Infrastructure Components
 struct AudioComponent { RID stream_rid; float volume; float pitch; bool is_3d; };
@@ -93,6 +96,7 @@ public:
 		BIT_INPUT = 1ULL << 7,
 		BIT_ANIMATION = 1ULL << 8,
 		BIT_SHADER_DATA = 1ULL << 9,
+		BIT_DEBUG = 1ULL << 10,
 	};
 
 	static EntityManager *get_singleton();
@@ -179,6 +183,7 @@ public:
 	inline SparseSet<Parent2DComponent> *get_parents_2d() { return get_registry_by_bit<Parent2DComponent>(BIT_PARENTS_2D); }
 	inline SparseSet<WorldTransformComponent> *get_world_transforms() { return get_registry_by_bit<WorldTransformComponent>(BIT_WORLD_TRANSFORM); }
 	inline SparseSet<WorldTransform2DComponent> *get_world_transforms_2d() { return get_registry_by_bit<WorldTransform2DComponent>(BIT_WORLD_TRANSFORM_2D); }
+	inline SparseSet<DebugComponent> *get_debugs() { return get_registry_by_bit<DebugComponent>(BIT_DEBUG); }
 
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
@@ -229,5 +234,32 @@ inline void EntityManager::add_component<WorldTransformComponent>(uint64_t p_ent
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
 		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM;
+	}
+}
+
+template <>
+inline void EntityManager::add_component<WorldTransform2DComponent>(uint64_t p_entity, const WorldTransform2DComponent &p_comp) {
+	get_registry<WorldTransform2DComponent>("WorldTransform2DComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM_2D;
+	}
+}
+
+template <>
+inline void EntityManager::add_component<Parent2DComponent>(uint64_t p_entity, const Parent2DComponent &p_comp) {
+	get_registry<Parent2DComponent>("Parent2DComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_PARENTS_2D;
+	}
+}
+
+template <>
+inline void EntityManager::add_component<DebugComponent>(uint64_t p_entity, const DebugComponent &p_comp) {
+	get_registry<DebugComponent>("DebugComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_DEBUG;
 	}
 }

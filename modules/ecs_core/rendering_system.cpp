@@ -81,51 +81,41 @@ void RenderingSystem::process_render_updates() {
 		return;
 	}
 
-	SparseSet<TransformComponent> *transforms = em->get_transforms();
-	if (!transforms || transforms->size() == 0) {
+	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
+	if (!worlds || worlds->size() == 0) {
 		return;
 	}
 
 	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
-	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
+	SparseSet<TransformComponent> *transforms = em->get_transforms();
 
-	int active_count = transforms->size();
+	int active_count = worlds->size();
 	
-	// Allocate with CUSTOM_DATA for 3D glitch FX
 	rs->multimesh_allocate_data(multimesh_data_rid, active_count, RenderingServer::MULTIMESH_TRANSFORM_3D, RenderingServer::MULTIMESH_CUSTOM_DATA_FLOAT);
 
-	// Create a local buffer for bulk upload (12 floats per Transform3D)
 	PackedFloat32Array buffer;
 	buffer.resize(active_count * 12);
 
-	const uint64_t *__restrict entities = transforms->get_dense_raw().ptr();
+	const uint64_t *__restrict entities = worlds->get_dense_raw().ptr();
 	float *__restrict ptr = buffer.ptrw();
 
 	for (int i = 0; i < active_count; i++) {
 		uint64_t entity = entities[i];
-		const TransformComponent &t = transforms->get(entity);
-		
-		float x = t.x, y = t.y, z = t.z;
-		if (worlds && worlds->has(entity)) {
-			const WorldTransformComponent &w = worlds->get(entity);
-			x = w.x;
-			y = w.y;
-			z = w.z;
-		}
+		const WorldTransformComponent &w = worlds->get(entity);
 
 		int base = i * 12;
-		ptr[base + 0] = 1.0f;
+		ptr[base + 0] = 1.0f; // Simplified rotation (Identity) for bare-metal
 		ptr[base + 1] = 0.0f;
 		ptr[base + 2] = 0.0f;
-		ptr[base + 3] = x;
+		ptr[base + 3] = w.x;
 		ptr[base + 4] = 0.0f;
 		ptr[base + 5] = 1.0f;
 		ptr[base + 6] = 0.0f;
-		ptr[base + 7] = y;
+		ptr[base + 7] = w.y;
 		ptr[base + 8] = 0.0f;
 		ptr[base + 9] = 0.0f;
 		ptr[base + 10] = 1.0f;
-		ptr[base + 11] = z;
+		ptr[base + 11] = w.z;
 
 		if (shader_datas && shader_datas->has(entity)) {
 			const ShaderDataComponent &sd = shader_datas->get(entity);

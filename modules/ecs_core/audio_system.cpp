@@ -98,7 +98,7 @@ void AudioSystem::process_audio_updates() {
 	}
 
 	SparseSet<AudioComponent> *audios = em->get_audios();
-	SparseSet<TransformComponent> *transforms = em->get_transforms();
+	SparseSet<WorldTransformComponent> *transforms = em->get_world_transforms();
 	if (!audios || !transforms) {
 		return;
 	}
@@ -109,8 +109,8 @@ void AudioSystem::process_audio_updates() {
 		AudioComponent &ac = audios->get(entity);
 
 		if (transforms->has(entity)) {
-			// Update spatial parameters based on TransformComponent
-			// TransformComponent &tc = transforms->get(entity);
+			// Update spatial parameters based on WorldTransformComponent (Zen synchronization)
+			// WorldTransformComponent &tc = transforms->get(entity);
 			// Example: as->audio_server_set_listener_2d_orientation(0.0f);
 		}
 	}
