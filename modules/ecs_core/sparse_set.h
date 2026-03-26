@@ -43,7 +43,7 @@ public:
 	virtual void remove(uint64_t p_entity) = 0;
 	virtual bool has(uint64_t p_entity) const = 0;
 	virtual int size() const = 0;
-	virtual const Vector<uint64_t>& get_dense_raw() const = 0;
+	virtual const Vector<uint64_t> &get_dense_raw() const = 0;
 	virtual ~ISparseSet() {}
 };
 
@@ -61,17 +61,19 @@ private:
 	inline uint32_t get_index(uint64_t p_entity) const { return (uint32_t)(p_entity & 0xFFFFFFFF); }
 
 public:
-	void register_on_added(const Callable& p_callable) { on_added_observers.push_back(p_callable); }
-	void register_on_removed(const Callable& p_callable) { on_removed_observers.push_back(p_callable); }
-	void unregister_on_added(const Callable& p_callable) { on_added_observers.erase(p_callable); }
-	void unregister_on_removed(const Callable& p_callable) { on_removed_observers.erase(p_callable); }
+	void register_on_added(const Callable &p_callable) { on_added_observers.push_back(p_callable); }
+	void register_on_removed(const Callable &p_callable) { on_removed_observers.push_back(p_callable); }
+	void unregister_on_added(const Callable &p_callable) { on_added_observers.erase(p_callable); }
+	void unregister_on_removed(const Callable &p_callable) { on_removed_observers.erase(p_callable); }
 
 	void insert(uint64_t p_entity, const T &p_component) {
 		uint32_t index = get_index(p_entity);
 		if (index >= (uint32_t)sparse.size()) {
 			int old_size = sparse.size();
 			sparse.resize(index + 1);
-			for (int i = old_size; i < sparse.size(); i++) sparse.write[i] = (uint32_t)-1;
+			for (int i = old_size; i < sparse.size(); i++) {
+				sparse.write[i] = (uint32_t)-1;
+			}
 		}
 
 		if (has(p_entity)) {
@@ -96,7 +98,9 @@ public:
 	}
 
 	void remove(uint64_t p_entity) override {
-		if (!has(p_entity)) return;
+		if (!has(p_entity)) {
+			return;
+		}
 
 		// Native Dispatch signaling destruction directly bypassing engine node checks
 		if (on_removed_observers.size() > 0) {
@@ -129,7 +133,7 @@ public:
 		return index < (uint32_t)sparse.size() && sparse[index] != (uint32_t)-1 && sparse[index] < (uint32_t)dense.size() && dense[sparse[index]] == p_entity;
 	}
 
-	T& get(uint64_t p_entity) {
+	T &get(uint64_t p_entity) {
 		return components.write[sparse[get_index(p_entity)]];
 	}
 

@@ -48,12 +48,16 @@ ECSPrefabBridge::ECSPrefabBridge() {
 }
 
 ECSPrefabBridge::~ECSPrefabBridge() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 // Add a recursive helper function to handle the scene tree
 void _process_node_recursive(Node *p_node, uint64_t p_parent_entity) {
-	if (!p_node) return;
+	if (!p_node) {
+		return;
+	}
 
 	EntityManager *em = EntityManager::get_singleton();
 	uint64_t current_entity = em->create_entity();
@@ -96,10 +100,14 @@ void _process_node_recursive(Node *p_node, uint64_t p_parent_entity) {
 }
 
 uint64_t ECSPrefabBridge::spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_parent) {
-	if (p_scene.is_null()) return 0;
+	if (p_scene.is_null()) {
+		return 0;
+	}
 
 	Node *root = p_scene->instantiate();
-	if (!root) return 0;
+	if (!root) {
+		return 0;
+	}
 
 	EntityManager *em = EntityManager::get_singleton();
 	uint64_t root_entity = em->create_entity();

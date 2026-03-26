@@ -71,8 +71,8 @@ private:
 	Vector<uint32_t> generations;
 	Vector<uint32_t> free_list; // Dynamically recycling structural holes instantly.
 
-	HashMap<StringName, ISparseSet*> registries;
-	ISparseSet* fast_registries[64] = {nullptr};
+	HashMap<StringName, ISparseSet *> registries;
+	ISparseSet *fast_registries[64] = { nullptr };
 	Vector<uint64_t> entity_masks;
 
 protected:
@@ -117,39 +117,47 @@ public:
 	template <typename T>
 	bool has_component(uint64_t p_entity);
 
-	template<typename T>
+	template <typename T>
 	void register_component_type(const StringName &p_name, uint64_t p_bit = 0) {
 		if (!registries.has(p_name)) {
-			SparseSet<T>* set = memnew(SparseSet<T>);
+			SparseSet<T> *set = memnew(SparseSet<T>);
 			registries[p_name] = set;
 			if (p_bit > 0) {
 				// Map bit to index (e.g. bit 1<<3 -> index 3)
 				int idx = 0;
 				uint64_t b = p_bit;
-				while (b >>= 1) idx++;
-				if (idx < 64) fast_registries[idx] = set;
+				while (b >>= 1) {
+					idx++;
+				}
+				if (idx < 64) {
+					fast_registries[idx] = set;
+				}
 			}
 		}
 	}
 
-	template<typename T>
-	SparseSet<T>* get_registry_by_bit(uint64_t p_bit) {
+	template <typename T>
+	SparseSet<T> *get_registry_by_bit(uint64_t p_bit) {
 		int idx = 0;
 		uint64_t b = p_bit;
-		if (b == 0) return nullptr;
-		while (b >>= 1) idx++;
-		return (SparseSet<T>*)fast_registries[idx];
+		if (b == 0) {
+			return nullptr;
+		}
+		while (b >>= 1) {
+			idx++;
+		}
+		return (SparseSet<T> *)fast_registries[idx];
 	}
 
-	template<typename T>
-	SparseSet<T>* get_registry(const StringName &p_name) {
+	template <typename T>
+	SparseSet<T> *get_registry(const StringName &p_name) {
 		if (registries.has(p_name)) {
-			return static_cast<SparseSet<T>*>(registries[p_name]);
+			return static_cast<SparseSet<T> *>(registries[p_name]);
 		}
 		return nullptr;
 	}
 
-	ISparseSet* get_registry_untyped(const StringName &p_name) {
+	ISparseSet *get_registry_untyped(const StringName &p_name) {
 		if (registries.has(p_name)) {
 			return registries[p_name];
 		}
@@ -157,17 +165,17 @@ public:
 	}
 	
 	// Core Engine Bindings using Direct Table Dispatch (O(1))
-	inline SparseSet<Transform2DComponent>* get_transforms_2d() { return get_registry_by_bit<Transform2DComponent>(BIT_TRANSFORM_2D); }
-	inline SparseSet<TransformComponent>* get_transforms() { return get_registry_by_bit<TransformComponent>(BIT_TRANSFORM); }
-	inline SparseSet<AudioComponent>* get_audios() { return get_registry_by_bit<AudioComponent>(BIT_AUDIO); }
-	inline SparseSet<InputComponent>* get_inputs() { return get_registry_by_bit<InputComponent>(BIT_INPUT); }
-	inline SparseSet<AnimationComponent>* get_animations() { return get_registry_by_bit<AnimationComponent>(BIT_ANIMATION); }
-	inline SparseSet<ShaderDataComponent>* get_shader_datas() { return get_registry_by_bit<ShaderDataComponent>(BIT_SHADER_DATA); }
-	
-	inline SparseSet<ParentComponent>* get_parents() { return get_registry_by_bit<ParentComponent>(BIT_PARENTS); }
-	inline SparseSet<Parent2DComponent>* get_parents_2d() { return get_registry_by_bit<Parent2DComponent>(BIT_PARENTS_2D); }
-	inline SparseSet<WorldTransformComponent>* get_world_transforms() { return get_registry_by_bit<WorldTransformComponent>(BIT_WORLD_TRANSFORM); }
-	inline SparseSet<WorldTransform2DComponent>* get_world_transforms_2d() { return get_registry_by_bit<WorldTransform2DComponent>(BIT_WORLD_TRANSFORM_2D); }
+	inline SparseSet<Transform2DComponent> *get_transforms_2d() { return get_registry_by_bit<Transform2DComponent>(BIT_TRANSFORM_2D); }
+	inline SparseSet<TransformComponent> *get_transforms() { return get_registry_by_bit<TransformComponent>(BIT_TRANSFORM); }
+	inline SparseSet<AudioComponent> *get_audios() { return get_registry_by_bit<AudioComponent>(BIT_AUDIO); }
+	inline SparseSet<InputComponent> *get_inputs() { return get_registry_by_bit<InputComponent>(BIT_INPUT); }
+	inline SparseSet<AnimationComponent> *get_animations() { return get_registry_by_bit<AnimationComponent>(BIT_ANIMATION); }
+	inline SparseSet<ShaderDataComponent> *get_shader_datas() { return get_registry_by_bit<ShaderDataComponent>(BIT_SHADER_DATA); }
+
+	inline SparseSet<ParentComponent> *get_parents() { return get_registry_by_bit<ParentComponent>(BIT_PARENTS); }
+	inline SparseSet<Parent2DComponent> *get_parents_2d() { return get_registry_by_bit<Parent2DComponent>(BIT_PARENTS_2D); }
+	inline SparseSet<WorldTransformComponent> *get_world_transforms() { return get_registry_by_bit<WorldTransformComponent>(BIT_WORLD_TRANSFORM); }
+	inline SparseSet<WorldTransform2DComponent> *get_world_transforms_2d() { return get_registry_by_bit<WorldTransform2DComponent>(BIT_WORLD_TRANSFORM_2D); }
 
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
@@ -177,30 +185,46 @@ public:
 };
 
 // Explicit Template Specialization logic manually defined to avoid compiling errors
-template <> inline void EntityManager::add_component<TransformComponent>(uint64_t p_entity, const TransformComponent& p_comp) { 
-	get_registry<TransformComponent>("TransformComponent")->insert(p_entity, p_comp); 
+template <>
+inline void EntityManager::add_component<TransformComponent>(uint64_t p_entity, const TransformComponent &p_comp) {
+	get_registry<TransformComponent>("TransformComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
-	if (idx < (uint32_t)entity_masks.size()) entity_masks.write[idx] |= BIT_TRANSFORM;
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_TRANSFORM;
+	}
 }
-template <> inline TransformComponent& EntityManager::get_component<TransformComponent>(uint64_t p_entity) { return get_registry<TransformComponent>("TransformComponent")->get(p_entity); }
-template <> inline bool EntityManager::has_component<TransformComponent>(uint64_t p_entity) { return get_registry<TransformComponent>("TransformComponent")->has(p_entity); }
+template <>
+inline TransformComponent &EntityManager::get_component<TransformComponent>(uint64_t p_entity) { return get_registry<TransformComponent>("TransformComponent")->get(p_entity); }
+template <>
+inline bool EntityManager::has_component<TransformComponent>(uint64_t p_entity) { return get_registry<TransformComponent>("TransformComponent")->has(p_entity); }
 
-template <> inline void EntityManager::add_component<Transform2DComponent>(uint64_t p_entity, const Transform2DComponent& p_comp) { 
-	get_registry<Transform2DComponent>("Transform2DComponent")->insert(p_entity, p_comp); 
+template <>
+inline void EntityManager::add_component<Transform2DComponent>(uint64_t p_entity, const Transform2DComponent &p_comp) {
+	get_registry<Transform2DComponent>("Transform2DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
-	if (idx < (uint32_t)entity_masks.size()) entity_masks.write[idx] |= BIT_TRANSFORM_2D;
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_TRANSFORM_2D;
+	}
 }
-template <> inline Transform2DComponent& EntityManager::get_component<Transform2DComponent>(uint64_t p_entity) { return get_registry<Transform2DComponent>("Transform2DComponent")->get(p_entity); }
-template <> inline bool EntityManager::has_component<Transform2DComponent>(uint64_t p_entity) { return get_registry<Transform2DComponent>("Transform2DComponent")->has(p_entity); }
+template <>
+inline Transform2DComponent &EntityManager::get_component<Transform2DComponent>(uint64_t p_entity) { return get_registry<Transform2DComponent>("Transform2DComponent")->get(p_entity); }
+template <>
+inline bool EntityManager::has_component<Transform2DComponent>(uint64_t p_entity) { return get_registry<Transform2DComponent>("Transform2DComponent")->has(p_entity); }
 
-template <> inline void EntityManager::add_component<ParentComponent>(uint64_t p_entity, const ParentComponent& p_comp) { 
-	get_registry<ParentComponent>("ParentComponent")->insert(p_entity, p_comp); 
+template <>
+inline void EntityManager::add_component<ParentComponent>(uint64_t p_entity, const ParentComponent &p_comp) {
+	get_registry<ParentComponent>("ParentComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
-	if (idx < (uint32_t)entity_masks.size()) entity_masks.write[idx] |= BIT_PARENTS;
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_PARENTS;
+	}
 }
 
-template <> inline void EntityManager::add_component<WorldTransformComponent>(uint64_t p_entity, const WorldTransformComponent& p_comp) { 
-	get_registry<WorldTransformComponent>("WorldTransformComponent")->insert(p_entity, p_comp); 
+template <>
+inline void EntityManager::add_component<WorldTransformComponent>(uint64_t p_entity, const WorldTransformComponent &p_comp) {
+	get_registry<WorldTransformComponent>("WorldTransformComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
-	if (idx < (uint32_t)entity_masks.size()) entity_masks.write[idx] |= BIT_WORLD_TRANSFORM;
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM;
+	}
 }

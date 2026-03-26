@@ -32,8 +32,6 @@
 
 #include "core/typedefs.h"
 #include "core/object/object.h"
-#include "servers/rendering/rendering_server.h"
-#include "core/templates/vector.h"
 
 // High-performance 2D Canvas Batcher. 
 // Uses RenderingServer::canvas_item_add_multimesh to draw 10,000+ pixel sprites 

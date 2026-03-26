@@ -40,8 +40,6 @@
 
 #include "core/typedefs.h"
 #include "core/object/object.h"
-#include "servers/physics_2d/physics_server_2d.h"
-#include "core/templates/rid.h"
 #include "core/typedefs.h"
 
 // Distinctly executes exact purely abstract native 2D server interactions natively

@@ -53,7 +53,9 @@ RenderingSystem2D::~RenderingSystem2D() {
 		RenderingServer::get_singleton()->free_rid(multimesh);
 		RenderingServer::get_singleton()->free_rid(mesh);
 	}
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 void RenderingSystem2D::initialize_canvas_batching(RID p_parent_canvas, RID p_texture) {
@@ -98,21 +100,27 @@ void RenderingSystem2D::initialize_canvas_batching(RID p_parent_canvas, RID p_te
 }
 
 void RenderingSystem2D::process_render_updates() {
-	if (!initialized) return;
+	if (!initialized) {
+		return;
+	}
 
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return;
+	if (!em) {
+		return;
+	}
 
-	SparseSet<Transform2DComponent>* transforms = em->get_transforms_2d();
-	if (!transforms || transforms->get_dense_raw().size() == 0) return;
+	SparseSet<Transform2DComponent> *transforms = em->get_transforms_2d();
+	if (!transforms || transforms->get_dense_raw().size() == 0) {
+		return;
+	}
 
 	RenderingServer *rs = RenderingServer::get_singleton();
 	
-	SparseSet<AnimationComponent>* animations = em->get_animations();
-	SparseSet<ShaderDataComponent>* shader_datas = em->get_shader_datas();
-	SparseSet<WorldTransform2DComponent>* worlds = em->get_world_transforms_2d();
+	SparseSet<AnimationComponent> *animations = em->get_animations();
+	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
+	SparseSet<WorldTransform2DComponent> *worlds = em->get_world_transforms_2d();
 
-	const Vector<uint64_t>& entities = transforms->get_dense_raw();
+	const Vector<uint64_t> &entities = transforms->get_dense_raw();
 	int count = entities.size();
 	
 	// We allocate with CUSTOM_DATA for Phase 13 glitching and animation
@@ -120,11 +128,11 @@ void RenderingSystem2D::process_render_updates() {
 
 	for (int i = 0; i < count; i++) {
 		uint64_t entity = entities[i];
-		Transform2DComponent& t = transforms->get(entity);
+		Transform2DComponent &t = transforms->get(entity);
 		
 		Transform2D xform;
 		if (worlds && worlds->has(entity)) {
-			WorldTransform2DComponent& w = worlds->get(entity);
+			WorldTransform2DComponent &w = worlds->get(entity);
 			xform.set_origin(Vector2(w.x, w.y));
 			xform.set_rotation(w.rotation);
 			xform.scale(Vector2(t.scale_x, t.scale_y));
@@ -140,13 +148,13 @@ void RenderingSystem2D::process_render_updates() {
 		Color custom_data(0, 0, 0, 0); // r=uv_x, g=uv_y, b=glitch, a=alpha
 		
 		if (animations && animations->has(entity)) {
-			AnimationComponent& anim = animations->get(entity);
+			AnimationComponent &anim = animations->get(entity);
 			custom_data.r = anim.uv_offset_x;
 			custom_data.g = anim.uv_offset_y;
 		}
 
 		if (shader_datas && shader_datas->has(entity)) {
-			ShaderDataComponent& sd = shader_datas->get(entity);
+			ShaderDataComponent &sd = shader_datas->get(entity);
 			custom_data.b = sd.data[0]; // Convention: data[0] is glitch level
 			custom_data.a = sd.data[1]; // Convention: data[1] is opacity
 		}

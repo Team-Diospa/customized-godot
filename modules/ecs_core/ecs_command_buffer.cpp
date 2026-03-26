@@ -47,7 +47,9 @@ ECSCommandBuffer::ECSCommandBuffer() {
 }
 
 ECSCommandBuffer::~ECSCommandBuffer() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 void ECSCommandBuffer::queue_destroy_entity(uint64_t p_entity_id) {
@@ -59,7 +61,7 @@ void ECSCommandBuffer::queue_destroy_entity(uint64_t p_entity_id) {
 	mutex.unlock();
 }
 
-void ECSCommandBuffer::queue_remove_component(uint64_t p_entity_id, const StringName& p_comp_name) {
+void ECSCommandBuffer::queue_remove_component(uint64_t p_entity_id, const StringName &p_comp_name) {
 	mutex.lock();
 	Command cmd;
 	cmd.type = CMD_REMOVE_COMPONENT;
@@ -77,14 +79,16 @@ void ECSCommandBuffer::execute_deferred_commands() {
 	mutex.unlock();
 
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return;
+	if (!em) {
+		return;
+	}
 
 	for (int i = 0; i < queue_copy.size(); i++) {
 		const Command &cmd = queue_copy[i];
 		if (cmd.type == CMD_DESTROY_ENTITY) {
 			em->destroy_entity(cmd.entity_id);
 		} else if (cmd.type == CMD_REMOVE_COMPONENT) {
-			ISparseSet* reg = em->get_registry_untyped(cmd.component_name);
+			ISparseSet *reg = em->get_registry_untyped(cmd.component_name);
 			if (reg) {
 				reg->remove(cmd.entity_id);
 			}

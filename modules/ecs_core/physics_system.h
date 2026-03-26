@@ -35,7 +35,6 @@
 #include "core/math/vector3.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"
-#include "servers/physics_3d/physics_server_3d.h"
 
 // The PhysicsSystem bypasses Godot's CharacterBody3D and RigidBody3D.
 // It directly pushes highly packed Transform components from the EntityManager 

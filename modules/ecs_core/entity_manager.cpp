@@ -60,9 +60,13 @@ EntityManager::EntityManager() {
 }
 
 EntityManager::~EntityManager() {
-	if (singleton == this) singleton = nullptr;
-	for (const KeyValue<StringName, ISparseSet*> &E : registries) {
-		if (E.value) memdelete(E.value);
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+	for (const KeyValue<StringName, ISparseSet *> &E : registries) {
+		if (E.value) {
+			memdelete(E.value);
+		}
 	}
 }
 
@@ -81,13 +85,17 @@ uint64_t EntityManager::create_entity() {
 
 void EntityManager::destroy_entity(uint64_t p_entity_id) {
 	uint32_t index = get_entity_index(p_entity_id);
-	if (index >= (uint32_t)generations.size()) return;
+	if (index >= (uint32_t)generations.size()) {
+		return;
+	}
 	
 	generations.write[index]++; // Invalidate existing IDs
 	entity_masks.write[index] = 0; // Clear mask
 	free_list.push_back(index);
 
-	for (const KeyValue<StringName, ISparseSet*> &E : registries) {
-		if (E.value) E.value->remove(p_entity_id);
+	for (const KeyValue<StringName, ISparseSet *> &E : registries) {
+		if (E.value) {
+			E.value->remove(p_entity_id);
+		}
 	}
 }

@@ -111,7 +111,7 @@ void AudioSystem::process_audio_updates() {
 
 		if (transforms->has(entity)) {
 			// Update spatial parameters based on TransformComponent
-			// TransformComponent& tc = transforms->get(entity);
+			// TransformComponent &tc = transforms->get(entity);
 			// as->audio_stream_set_position(ac.stream_rid, tc.position);
 		}
 	}

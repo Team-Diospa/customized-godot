@@ -32,9 +32,6 @@
 
 #include "core/typedefs.h"
 #include "core/object/object.h"
-#include "core/object/class_db.h"
-#include "core/io/file_access.h"
-#include "entity_manager.h"
 
 /**
  * @class ECSSerializer

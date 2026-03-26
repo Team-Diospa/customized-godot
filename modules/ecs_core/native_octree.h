@@ -113,8 +113,8 @@ private:
 		}
 	}
 	// SIMD Frustum/Inclusion check (Theoretical peak performance)
-	static inline bool intersects_simd(const float* __restrict p_box_min, const float* __restrict p_box_max, 
-									  const float* __restrict p_test_min, const float* __restrict p_test_max) {
+	static inline bool intersects_simd(const float *__restrict p_box_min, const float *__restrict p_box_max,
+			const float *__restrict p_test_min, const float *__restrict p_test_max) {
 #if defined(__SSE2__)
 		__m128 b_min = _mm_loadu_ps(p_box_min);
 		__m128 b_max = _mm_loadu_ps(p_box_max);

@@ -33,7 +33,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "core/object/class_db.h"
 #include "core/variant/variant.h"
-#include "simd_math.h"
 
 RenderingSystem *RenderingSystem::singleton = nullptr;
 
@@ -51,11 +50,17 @@ RenderingSystem::RenderingSystem() {
 }
 
 RenderingSystem::~RenderingSystem() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 	RenderingServer *rs = RenderingServer::get_singleton();
 	if (rs) {
-		if (multimesh_instance_rid.is_valid()) rs->free_rid(multimesh_instance_rid);
-		if (multimesh_data_rid.is_valid()) rs->free_rid(multimesh_data_rid);
+		if (multimesh_instance_rid.is_valid()) {
+			rs->free_rid(multimesh_instance_rid);
+		}
+		if (multimesh_data_rid.is_valid()) {
+			rs->free_rid(multimesh_data_rid);
+		}
 	}
 }
 
@@ -71,13 +76,17 @@ void RenderingSystem::initialize_hardware_instancing(RID p_base_mesh, RID p_scen
 void RenderingSystem::process_render_updates() {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	EntityManager *em = EntityManager::get_singleton();
-	if (!rs || !em) return;
+	if (!rs || !em) {
+		return;
+	}
 
-	SparseSet<TransformComponent>* transforms = em->get_transforms();
-	if (!transforms || transforms->size() == 0) return;
+	SparseSet<TransformComponent> *transforms = em->get_transforms();
+	if (!transforms || transforms->size() == 0) {
+		return;
+	}
 
-	SparseSet<ShaderDataComponent>* shader_datas = em->get_shader_datas();
-	SparseSet<WorldTransformComponent>* worlds = em->get_world_transforms();
+	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
+	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
 
 	int active_count = transforms->size();
 	
@@ -88,26 +97,37 @@ void RenderingSystem::process_render_updates() {
 	PackedFloat32Array buffer;
 	buffer.resize(active_count * 12);
 
-	const uint64_t* __restrict entities = transforms->get_dense_raw().ptr();
-	float* __restrict ptr = buffer.ptrw();
+	const uint64_t *__restrict entities = transforms->get_dense_raw().ptr();
+	float *__restrict ptr = buffer.ptrw();
 
 	for (int i = 0; i < active_count; i++) {
 		uint64_t entity = entities[i];
-		const TransformComponent& t = transforms->get(entity);
+		const TransformComponent &t = transforms->get(entity);
 		
 		float x = t.x, y = t.y, z = t.z;
 		if (worlds && worlds->has(entity)) {
-			const WorldTransformComponent& w = worlds->get(entity);
-			x = w.x; y = w.y; z = w.z;
+			const WorldTransformComponent &w = worlds->get(entity);
+			x = w.x;
+			y = w.y;
+			z = w.z;
 		}
 
 		int base = i * 12;
-		ptr[base + 0] = 1.0f; ptr[base + 1] = 0.0f; ptr[base + 2] = 0.0f; ptr[base + 3] = x;
-		ptr[base + 4] = 0.0f; ptr[base + 5] = 1.0f; ptr[base + 6] = 0.0f; ptr[base + 7] = y;
-		ptr[base + 8] = 0.0f; ptr[base + 9] = 0.0f; ptr[base + 10] = 1.0f; ptr[base + 11] = z;
+		ptr[base + 0] = 1.0f;
+		ptr[base + 1] = 0.0f;
+		ptr[base + 2] = 0.0f;
+		ptr[base + 3] = x;
+		ptr[base + 4] = 0.0f;
+		ptr[base + 5] = 1.0f;
+		ptr[base + 6] = 0.0f;
+		ptr[base + 7] = y;
+		ptr[base + 8] = 0.0f;
+		ptr[base + 9] = 0.0f;
+		ptr[base + 10] = 1.0f;
+		ptr[base + 11] = z;
 
 		if (shader_datas && shader_datas->has(entity)) {
-			const ShaderDataComponent& sd = shader_datas->get(entity);
+			const ShaderDataComponent &sd = shader_datas->get(entity);
 			Color custom_data(sd.data[0], sd.data[1], sd.data[2], sd.data[3]);
 			rs->multimesh_instance_set_custom_data(multimesh_data_rid, i, custom_data);
 		}

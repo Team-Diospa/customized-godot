@@ -73,21 +73,39 @@ ECSScheduler::ECSScheduler() {
 		register_process_system(callable_mp(HierarchySystem::get_singleton(), &HierarchySystem::process_hierarchy_2d_updates));
 	}
 
-	if (RenderingSystem::get_singleton()) register_process_system(callable_mp(RenderingSystem::get_singleton(), &RenderingSystem::process_render_updates));
-	if (RenderingSystem2D::get_singleton()) register_process_system(callable_mp(RenderingSystem2D::get_singleton(), &RenderingSystem2D::process_render_updates));
+	if (RenderingSystem::get_singleton()) {
+		register_process_system(callable_mp(RenderingSystem::get_singleton(), &RenderingSystem::process_render_updates));
+	}
+	if (RenderingSystem2D::get_singleton()) {
+		register_process_system(callable_mp(RenderingSystem2D::get_singleton(), &RenderingSystem2D::process_render_updates));
+	}
 	
-	if (PhysicsSystem::get_singleton()) register_physics_system(callable_mp(PhysicsSystem::get_singleton(), &PhysicsSystem::process_physics_updates));
-	if (PhysicsSystem2D::get_singleton()) register_physics_system(callable_mp(PhysicsSystem2D::get_singleton(), &PhysicsSystem2D::process_physics_updates));
+	if (PhysicsSystem::get_singleton()) {
+		register_physics_system(callable_mp(PhysicsSystem::get_singleton(), &PhysicsSystem::process_physics_updates));
+	}
+	if (PhysicsSystem2D::get_singleton()) {
+		register_physics_system(callable_mp(PhysicsSystem2D::get_singleton(), &PhysicsSystem2D::process_physics_updates));
+	}
 	
-	if (AudioSystem::get_singleton()) register_process_system(callable_mp(AudioSystem::get_singleton(), &AudioSystem::process_audio_updates));
-	if (InputBufferSystem::get_singleton()) register_process_system(callable_mp(InputBufferSystem::get_singleton(), &InputBufferSystem::process_input_buffer));
+	if (AudioSystem::get_singleton()) {
+		register_process_system(callable_mp(AudioSystem::get_singleton(), &AudioSystem::process_audio_updates));
+	}
+	if (InputBufferSystem::get_singleton()) {
+		register_process_system(callable_mp(InputBufferSystem::get_singleton(), &InputBufferSystem::process_input_buffer));
+	}
 	
-	if (AnimationSystem::get_singleton()) register_process_system(callable_mp(AnimationSystem::get_singleton(), &AnimationSystem::process_animation_updates));
-	if (ShaderDataSystem::get_singleton()) register_process_system(callable_mp(ShaderDataSystem::get_singleton(), &ShaderDataSystem::update_horrror_params));
+	if (AnimationSystem::get_singleton()) {
+		register_process_system(callable_mp(AnimationSystem::get_singleton(), &AnimationSystem::process_animation_updates));
+	}
+	if (ShaderDataSystem::get_singleton()) {
+		register_process_system(callable_mp(ShaderDataSystem::get_singleton(), &ShaderDataSystem::update_horrror_params));
+	}
 }
 
 ECSScheduler::~ECSScheduler() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 void ECSScheduler::update_ecs() {
@@ -96,7 +114,9 @@ void ECSScheduler::update_ecs() {
 }
 
 void ECSScheduler::_notification(int p_what) {
-	if (Engine::get_singleton()->is_editor_hint()) return;
+	if (Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
 	
 	if (p_what == Node::NOTIFICATION_PROCESS) {
 		// 1. Parallel Hierarchy Update

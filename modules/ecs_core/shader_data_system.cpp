@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "shader_data_system.h"
-#include "entity_manager.h"
 
 ShaderDataSystem *ShaderDataSystem::singleton = nullptr;
 
@@ -42,7 +41,9 @@ ShaderDataSystem::ShaderDataSystem() {
 }
 
 ShaderDataSystem::~ShaderDataSystem() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 void ShaderDataSystem::update_horrror_params() {

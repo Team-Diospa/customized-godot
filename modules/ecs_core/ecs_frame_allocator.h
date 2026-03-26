@@ -48,10 +48,12 @@ class ECSFrameAllocator {
 public:
 	static ECSFrameAllocator *get_singleton() { return singleton; }
 
-	void* alloc(uint32_t p_size) {
+	void *alloc(uint32_t p_size) {
 		uint32_t aligned_size = (p_size + 15) & ~15; // 16-byte alignment
-		if (offset + aligned_size > capacity) return nullptr;
-		
+		if (offset + aligned_size > capacity) {
+			return nullptr;
+		}
+
 		void *ptr = buffer + offset;
 		offset += aligned_size;
 		return ptr;
@@ -63,12 +65,14 @@ public:
 
 	void initialize(uint32_t p_capacity) {
 		capacity = p_capacity;
-		buffer = (uint8_t*)memalloc(capacity);
+		buffer = (uint8_t *)memalloc(capacity);
 		offset = 0;
 	}
 
 	void finalize() {
-		if (buffer) memfree(buffer);
+		if (buffer) {
+			memfree(buffer);
+		}
 		buffer = nullptr;
 	}
 

@@ -42,19 +42,25 @@ AnimationSystem::AnimationSystem() {
 }
 
 AnimationSystem::~AnimationSystem() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 void AnimationSystem::process_animation_updates(float p_delta) {
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return;
+	if (!em) {
+		return;
+	}
 
-	SparseSet<AnimationComponent>* animations = em->get_animations();
-	if (!animations) return;
+	SparseSet<AnimationComponent> *animations = em->get_animations();
+	if (!animations) {
+		return;
+	}
 
-	const Vector<uint64_t>& entities = animations->get_dense_raw();
+	const Vector<uint64_t> &entities = animations->get_dense_raw();
 	for (int i = 0; i < entities.size(); i++) {
-		AnimationComponent& anim = animations->get(entities[i]);
+		AnimationComponent &anim = animations->get(entities[i]);
 		
 		anim.time_accumulator += p_delta;
 		float frame_time = 1.0f / anim.fps;

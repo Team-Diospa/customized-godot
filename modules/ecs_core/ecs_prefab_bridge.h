@@ -32,10 +32,7 @@
 
 #include "core/typedefs.h"
 #include "core/object/object.h"
-#include "core/string/string_name.h"
-#include "core/object/class_db.h"
 #include "scene/resources/packed_scene.h"
-#include "entity_manager.h"
 
 /**
  * @class ECSPrefabBridge

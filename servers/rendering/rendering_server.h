@@ -63,6 +63,7 @@ class RenderingDevice;
 
 class RenderingServer : public Object {
 	GDCLASS(RenderingServer, Object);
+
 public:
 	using ArrayType = RenderingServerEnums::ArrayType;
 	using PrimitiveType = RenderingServerEnums::PrimitiveType;

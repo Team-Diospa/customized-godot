@@ -42,15 +42,21 @@ ECSSerializer::ECSSerializer() {
 }
 
 ECSSerializer::~ECSSerializer() {
-	if (singleton == this) singleton = nullptr;
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 Error ECSSerializer::save_world(const String &p_path) {
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return ERR_CANT_CREATE;
+	if (!em) {
+		return ERR_CANT_CREATE;
+	}
 
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
-	if (f.is_null()) return ERR_FILE_CANT_OPEN;
+	if (f.is_null()) {
+		return ERR_FILE_CANT_OPEN;
+	}
 
 	// 1. Write Header
 	f->store_32(0x45435357); // "ECSW" magic number

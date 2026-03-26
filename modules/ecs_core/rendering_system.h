@@ -2,7 +2,6 @@
 #define ECS_RENDERING_SYSTEM_H
 
 #include "core/object/object.h"
-#include "servers/rendering/rendering_server.h"
 
 class RenderingSystem : public Object {
 	GDCLASS(RenderingSystem, Object);
