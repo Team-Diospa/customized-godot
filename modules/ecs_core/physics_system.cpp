@@ -31,6 +31,7 @@
 #include "physics_system.h"
 #include "entity_manager.h"
 #include "core/math/transform_3d.h"
+#include "core/object/class_db.h"
 #include "servers/physics_3d/physics_server_3d.h"
 #include "core/templates/rid.h"
 #include "core/typedefs.h"

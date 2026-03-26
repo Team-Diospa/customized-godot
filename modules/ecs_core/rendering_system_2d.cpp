@@ -32,6 +32,7 @@
 #include "entity_manager.h"
 #include "servers/rendering/rendering_server.h"
 #include "core/math/vector2.h"
+#include "core/object/class_db.h"
 #include "core/math/transform_2d.h"
 
 RenderingSystem2D *RenderingSystem2D::singleton = nullptr;

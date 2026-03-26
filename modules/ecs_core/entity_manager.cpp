@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "entity_manager.h"
+#include "core/object/class_db.h"
 
 EntityManager *EntityManager::singleton = nullptr;
 

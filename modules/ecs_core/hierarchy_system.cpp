@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "hierarchy_system.h"
+#include "core/object/class_db.h"
 #include "simd_math.h"
 #include "core/templates/vector.h"
 #include "core/math/math_funcs.h"

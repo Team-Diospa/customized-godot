@@ -31,7 +31,7 @@
 #include "ecs_scheduler.h"
 #include "core/os/worker_thread_pool.h"
 #include "core/config/engine.h"
-#include "core/object/callable_method_pointer.h"
+#include "core/object/callable_mp.h"
 #include "core/variant/callable.h"
 #include "core/templates/vector.h"
 #include "hierarchy_system.h"

@@ -33,7 +33,7 @@
 #include "scene/main/node.h" // Keep this for Node inheritance
 #include "core/typedefs.h"
 #include "core/object/object.h"
-#include "core/object/callable_method_pointer.h"
+#include "core/object/callable_mp.h"
 #include "core/variant/callable.h"
 
 // Abstract Registry evaluating pipelines dynamically via explicitly serialized Callable Arrays.
