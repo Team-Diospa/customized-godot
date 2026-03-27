@@ -46,6 +46,7 @@
 #include "rendering_system.h"
 #include "rendering_system_2d.h"
 #include "shader_data_system.h"
+#include "octree_system.h"
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
@@ -58,6 +59,7 @@ static RenderingSystem *ptr_rendering_system = nullptr;
 static RenderingSystem2D *ptr_rendering_system_2d = nullptr;
 static PhysicsSystem *ptr_physics_system = nullptr;
 static HierarchySystem *ptr_hierarchy_system = nullptr;
+static ecs::OctreeSystem *ptr_octree_system = nullptr;
 static ECSScheduler *ptr_ecs_scheduler = nullptr;
 static ECSCommandBuffer *ptr_ecs_command_buffer = nullptr;
 static ecs::ECSFrameAllocator *ptr_ecs_frame_allocator = nullptr;
@@ -79,6 +81,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ClassDB::register_class<PhysicsSystem>();
 	ClassDB::register_class<PhysicsSystem2D>();
 	ClassDB::register_class<HierarchySystem>();
+	ClassDB::register_class<ecs::OctreeSystem>();
 	ClassDB::register_class<ECSScheduler>();
 	ClassDB::register_class<ECSCommandBuffer>();
 	ClassDB::register_class<ECSSerializer>();
@@ -96,6 +99,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ptr_rendering_system_2d = memnew(RenderingSystem2D);
 	ptr_physics_system = memnew(PhysicsSystem);
 	ptr_hierarchy_system = memnew(HierarchySystem);
+	ptr_octree_system = memnew(ecs::OctreeSystem);
 	ptr_physics_system_2d = memnew(PhysicsSystem2D);
 	ptr_audio_system = memnew(AudioSystem);
 	ptr_input_buffer_system = memnew(InputBufferSystem);
@@ -113,6 +117,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("RenderingSystem2D", (Object *)RenderingSystem2D::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsSystem", (Object *)PhysicsSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("HierarchySystem", (Object *)HierarchySystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("OctreeSystem", (Object *)ecs::OctreeSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSScheduler", (Object *)ECSScheduler::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsSystem2D", (Object *)PhysicsSystem2D::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("AudioSystem", (Object *)AudioSystem::get_singleton()));
@@ -173,6 +178,10 @@ void uninitialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	if (ptr_hierarchy_system) {
 		memdelete(ptr_hierarchy_system);
 		ptr_hierarchy_system = nullptr;
+	}
+	if (ptr_octree_system) {
+		memdelete(ptr_octree_system);
+		ptr_octree_system = nullptr;
 	}
 	if (ptr_physics_system) {
 		memdelete(ptr_physics_system);

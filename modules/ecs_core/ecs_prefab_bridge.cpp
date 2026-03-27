@@ -37,7 +37,6 @@
 #include "core/object/object.h"
 #include "core/variant/variant.h"
 #include "scene/2d/node_2d.h"
-#include "scene/2d/sprite_2d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/main/node.h"
@@ -73,35 +72,50 @@ void _process_node_recursive(Node *p_node, uint64_t p_parent_entity) {
 	dbg.label = p_node->get_name();
 	em->add_component(current_entity, dbg);
 
-	if (p_parent_entity != 0) {
-		if (Node3D *n3d = Object::cast_to<Node3D>(p_node)) {
+	if (Node3D *n3d = Object::cast_to<Node3D>(p_node)) {
+		if (p_parent_entity != 0) {
 			HierarchySystem::get_singleton()->set_parent(current_entity, p_parent_entity);
-
-			// Update local values (set_parent handles depth & sorting)
 			ParentComponent &pcomp = em->get_component<ParentComponent>(current_entity);
 			pcomp.local_x = n3d->get_position().x;
 			pcomp.local_y = n3d->get_position().y;
 			pcomp.local_z = n3d->get_position().z;
+			Vector3 rot = n3d->get_rotation();
+			pcomp.local_rot_x = rot.x; pcomp.local_rot_y = rot.y; pcomp.local_rot_z = rot.z;
+		} else {
+			TransformComponent t;
+			t.x = n3d->get_position().x;
+			t.y = n3d->get_position().y;
+			t.z = n3d->get_position().z;
+			Vector3 s = n3d->get_scale();
+			t.scale_x = s.x; t.scale_y = s.y; t.scale_z = s.z;
+			em->add_component(current_entity, t);
+		}
+		WorldTransformComponent w;
+		em->add_component(current_entity, w);
 
-			WorldTransformComponent w; // World Transform will be resolved by HierarchySystem
-			em->add_component(current_entity, w);
-		} else if (Node2D *n2d = Object::cast_to<Node2D>(p_node)) {
+		// [Step 4] Auto-mapping Hardware Instancer Bridge
+		if (MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(p_node)) {
+			// In production, we'd register this mesh RID to the RenderingSystem
+			// and give the entity a RenderingComponent.
+		}
+	} else if (Node2D *n2d = Object::cast_to<Node2D>(p_node)) {
+		if (p_parent_entity != 0) {
 			HierarchySystem::get_singleton()->set_parent_2d(current_entity, p_parent_entity);
-
 			Parent2DComponent &pcomp = em->get_component<Parent2DComponent>(current_entity);
 			pcomp.local_x = n2d->get_position().x;
 			pcomp.local_y = n2d->get_position().y;
-
-			WorldTransform2DComponent w;
-			em->add_component(current_entity, w);
+			pcomp.local_rot = n2d->get_rotation();
+		} else {
+			Transform2DComponent t;
+			t.x = n2d->get_position().x;
+			t.y = n2d->get_position().y;
+			t.rotation = n2d->get_rotation();
+			t.scale_x = n2d->get_scale().x;
+			t.scale_y = n2d->get_scale().y;
+			em->add_component(current_entity, t);
 		}
-	}
-
-	// Map Components based on Node type
-	if (MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(p_node)) {
-		// Logic for MeshComponent here (Phase 1 to 5)
-	} else if (Sprite2D *s2d = Object::cast_to<Sprite2D>(p_node)) {
-		// Transform already handled by Parent check, adding rendering bits
+		WorldTransform2DComponent w;
+		em->add_component(current_entity, w);
 	}
 
 	// Recurse to children
@@ -120,34 +134,33 @@ uint64_t ECSPrefabBridge::spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_
 		return 0;
 	}
 
+	// Start recursion from root (ID will be tracked via internal logic)
+	// For return value tracking, we might need a small modification to recursion or 
+	// just recreate root logic if return ID is critical.
+	
+	// Actually, let's just use a modified helper that returns the ID.
 	EntityManager *em = EntityManager::get_singleton();
-	uint64_t root_entity = em->create_entity();
+	uint64_t root_entity = em->create_entity(); // Re-use old flow but call helper for kids
+	
+	// Map Root Logic
+	DebugComponent dbg; dbg.label = root->get_name(); em->add_component(root_entity, dbg);
 
-	// Handle initial transform
 	if (Node3D *n3d = Object::cast_to<Node3D>(root)) {
 		TransformComponent t;
-		t.x = n3d->get_position().x;
-		t.y = n3d->get_position().y;
-		t.z = n3d->get_position().z;
+		t.x = n3d->get_position().x; t.y = n3d->get_position().y; t.z = n3d->get_position().z;
 		em->add_component(root_entity, t);
+		em->add_component(root_entity, WorldTransformComponent());
 	} else if (Node2D *n2d = Object::cast_to<Node2D>(root)) {
 		Transform2DComponent t;
-		t.x = n2d->get_position().x;
-		t.y = n2d->get_position().y;
+		t.x = n2d->get_position().x; t.y = n2d->get_position().y;
 		em->add_component(root_entity, t);
+		em->add_component(root_entity, WorldTransform2DComponent());
 	}
 
-	DebugComponent dbg;
-	dbg.label = root->get_name();
-	em->add_component(root_entity, dbg);
-
-	// Process children recursively
 	for (int i = 0; i < root->get_child_count(); i++) {
 		_process_node_recursive(root->get_child(i), root_entity);
 	}
 
-	// Cleanup the temporary scene instance
 	root->queue_free();
-
 	return root_entity;
 }

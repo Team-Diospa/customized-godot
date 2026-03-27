@@ -116,16 +116,35 @@ private:
 			parent.children[i] = first_child_idx + i;
 		}
 
-		// Re-distribute existing entities into children (simple but correct)
+		// REDISTRIBUTE: Move entities to children if they fit entirely
 		Vector<uint64_t> old_entities = parent.entities;
 		parent.entities.clear();
+
 		for (int i = 0; i < old_entities.size(); i++) {
-			// In a high-perf octree, entities are usually only at leaves, 
-			// but for this hybrid we re-insert them properly.
-			// (Assuming we have access to retrieve the AABB, or we just push to root for now)
-			// For sustainability, we keep them in the parent if they span multiple children.
-			parent.entities.push_back(old_entities[i]);
+			uint64_t entity = old_entities[i];
+			AABB entity_aabb = _get_entity_aabb(entity);
+			
+			int target_child = -1;
+			for (int j = 0; j < 8; j++) {
+				if (nodes[parent.children[j]].bounds.encloses(entity_aabb)) {
+					target_child = parent.children[j];
+					break;
+				}
+			}
+
+			if (target_child != -1) {
+				nodes.write[target_child].entities.push_back(entity);
+			} else {
+				parent.entities.push_back(entity); // Spans multiple children, keep in parent
+			}
 		}
+	}
+
+	// Internal helper to get entity AABB (Hardcoded stub until EntityManager integration)
+	AABB _get_entity_aabb(uint64_t p_entity) const {
+		// This should ideally fetch Transform + Mesh/Collision bounds.
+		// For barebones, we assume a small unit cube as placeholder.
+		return AABB(Vector3(0, 0, 0), Vector3(1, 1, 1)); 
 	}
 public:
 	template <typename Func>

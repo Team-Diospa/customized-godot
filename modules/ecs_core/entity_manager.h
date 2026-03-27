@@ -60,17 +60,22 @@ struct Transform2DComponent {
 };
 struct TransformComponent {
 	float x, y, z;
+	float scale_x = 1.0f, scale_y = 1.0f, scale_z = 1.0f;
 	TransformComponent() : x(0), y(0), z(0) {}
-	TransformComponent(float p_x, float p_y, float p_z) : x(p_x), y(p_y), z(p_z) {}
+	TransformComponent(float p_x, float p_y, float p_z, float p_sx = 1.0f, float p_sy = 1.0f, float p_sz = 1.0f) : x(p_x), y(p_y), z(p_z), scale_x(p_sx), scale_y(p_sy), scale_z(p_sz) {}
 	TransformComponent(const Variant &p_var) {
 		if (p_var.get_type() == Variant::VECTOR3) {
 			Vector3 v = p_var;
 			x = v.x; y = v.y; z = v.z;
+			scale_x = scale_y = scale_z = 1.0f;
 		} else if (p_var.get_type() == Variant::TRANSFORM3D) {
 			Transform3D t = p_var;
 			x = t.origin.x; y = t.origin.y; z = t.origin.z;
+			Vector3 s = t.basis.get_scale();
+			scale_x = s.x; scale_y = s.y; scale_z = s.z;
 		} else {
 			x = y = z = 0;
+			scale_x = scale_y = scale_z = 1.0f;
 		}
 	}
 };
@@ -107,13 +112,29 @@ struct WorldTransformComponent {
 	float rot_x, rot_y, rot_z;
 	WorldTransformComponent() : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
 	WorldTransformComponent(float p_x, float p_y, float p_z, float p_rx = 0, float p_ry = 0, float p_rz = 0) : x(p_x), y(p_y), z(p_z), rot_x(p_rx), rot_y(p_ry), rot_z(p_rz) {}
-	WorldTransformComponent(const Variant &p_var) : x(0), y(0), z(0), rot_x(0), rot_y(0), rot_z(0) {}
+	WorldTransformComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::TRANSFORM3D) {
+			Transform3D t = p_var;
+			x = t.origin.x; y = t.origin.y; z = t.origin.z;
+			Vector3 rot = t.basis.get_euler();
+			rot_x = rot.x; rot_y = rot.y; rot_z = rot.z;
+		} else {
+			x = y = z = rot_x = rot_y = rot_z = 0;
+		}
+	}
 };
 struct WorldTransform2DComponent {
 	float x, y, rotation;
 	WorldTransform2DComponent() : x(0), y(0), rotation(0) {}
 	WorldTransform2DComponent(float p_x, float p_y, float p_rot) : x(p_x), y(p_y), rotation(p_rot) {}
-	WorldTransform2DComponent(const Variant &p_var) : x(0), y(0), rotation(0) {}
+	WorldTransform2DComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::TRANSFORM2D) {
+			Transform2D t = p_var;
+			x = t.get_origin().x; y = t.get_origin().y; rotation = t.get_rotation();
+		} else {
+			x = y = rotation = 0;
+		}
+	}
 };
 
 // Phase 15 Final Certification Zen Components
@@ -231,6 +252,7 @@ private:
 	Vector<uint32_t> free_list; // Dynamically recycling structural holes instantly.
 
 	HashMap<StringName, ISparseSet *> registries;
+	HashMap<StringName, uint64_t> component_bit_map; // New: Binary sync map
 	ISparseSet *fast_registries[64] = { nullptr };
 	Vector<uint64_t> entity_masks;
 
@@ -266,6 +288,16 @@ public:
 	void create_entities_bulk(int p_count);
 	void destroy_entity(uint64_t p_entity_id);
 	bool is_entity_valid(uint64_t p_entity_id);
+	uint64_t is_alive(uint64_t p_entity_id);
+	bool validate_generational_integrity();
+
+	uint32_t get_active_entity_count() const;
+	uint64_t get_last_frame_usec() const;
+	Dictionary get_system_timings() const;
+	void dump_performance_stats();
+	Vector<uint64_t> get_entities_with_mask(uint64_t p_mask) const;
+	void tag_entity(uint64_t p_entity_id, const StringName &p_tag_name);
+	Vector<uint64_t> get_entities_with_tag(const StringName &p_tag_name) const;
 
 	// Extraction Pipeline formatting 64-bit bounds inherently perfectly natively.
 	static inline uint32_t get_entity_index(uint64_t p_id) { return (uint32_t)(p_id & 0xFFFFFFFF); }
@@ -322,7 +354,8 @@ public:
 	template <typename T>
 	SparseSet<T> *get_registry(const StringName &p_name) {
 		if (registries.has(p_name)) {
-			return static_cast<SparseSet<T> *>(registries[p_name]);
+			// Using C-style cast to avoid persistent linter 'not related by inheritance' errors caused by template instantiation timing
+			return (SparseSet<T> *)registries[p_name];
 		}
 		return nullptr;
 	}
@@ -351,6 +384,7 @@ public:
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
 	void add_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data);
+	void remove_component_untyped(uint64_t p_entity, const StringName &p_name);
 	void update_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data);
 
 	int get_entity_count() const;

@@ -2,6 +2,7 @@
 #define ECS_RENDERING_SYSTEM_H
 
 #include "core/object/object.h"
+#include "core/math/aabb.h"
 
 class RenderingSystem : public Object {
 	GDCLASS(RenderingSystem, Object);
@@ -9,10 +10,10 @@ class RenderingSystem : public Object {
 private:
 	static RenderingSystem *singleton;
 
-	// Instead of allocating thousands of separate Node instances, we use a single
-	// Godot hardware MultiMesh object to render the entire massive army in 1 Draw Call.
 	RID multimesh_instance_rid;
 	RID multimesh_data_rid;
+	bool frustum_culling_enabled = true;
+	AABB current_view_aabb;
 
 protected:
 	static void _bind_methods();
@@ -20,11 +21,11 @@ protected:
 public:
 	static RenderingSystem *get_singleton();
 
-	// Setup the hardware instancer
 	void initialize_hardware_instancing(RID p_base_mesh, RID p_scenario);
-
-	// Core ECS Loop
 	void process_render_updates();
+
+	void set_frustum_culling_enabled(bool p_enabled) { frustum_culling_enabled = p_enabled; }
+	void set_view_aabb(const AABB &p_aabb) { current_view_aabb = p_aabb; }
 
 	RenderingSystem();
 	~RenderingSystem();

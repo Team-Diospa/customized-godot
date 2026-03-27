@@ -49,6 +49,7 @@ public:
 	static ECSSerializer *get_singleton() { return singleton; }
 
 	int save_world(const String &p_path);
+	int save_delta(const String &p_path, const Dictionary &p_baseline);
 	int load_world(const String &p_path);
 
 	ECSSerializer();

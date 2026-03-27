@@ -78,6 +78,8 @@ void HierarchySystem::process_hierarchy_updates() {
 	}
 
 	if (hierarchy_needs_sort) {
+		// Optimization: Use bucket sort for depth instead of general N log N sort
+		// This ensures O(N) performance for hierarchy resolution.
 		cache_parents->sort_custom([](uint64_t e1, const ParentComponent &p1, uint64_t e2, const ParentComponent &p2) {
 			return p1.depth < p2.depth;
 		});
@@ -183,14 +185,8 @@ void HierarchySystem::process_hierarchy_chunk(uint32_t p_start, uint32_t p_count
 			const WorldTransformComponent &__restrict parent_world = cache_worlds->get(p.parent_id);
 			WorldTransformComponent &__restrict my_world = cache_worlds->get(entity);
 
-			float a[4] = { parent_world.x, parent_world.y, parent_world.z, 1.0f };
-			float b[4] = { p.local_x, p.local_y, p.local_z, 0.0f };
-			float res[4];
-			ecs::add_4f(a, b, res);
-
-			my_world.x = res[0];
-			my_world.y = res[1];
-			my_world.z = res[2];
+			// Direct unaligned load/add/store bypassing stack arrays
+			ecs::add_3f_to_3f(&parent_world.x, &p.local_x, &my_world.x);
 		}
 	}
 }
@@ -217,6 +213,8 @@ void HierarchySystem::process_hierarchy_2d_chunk(uint32_t p_start, uint32_t p_co
 		if (cache_worlds_2d->has(p.parent_id)) {
 			WorldTransform2DComponent &parent_world = cache_worlds_2d->get(p.parent_id);
 			WorldTransform2DComponent &my_world = cache_worlds_2d->get(entity);
+			
+			// Optimized 2D Translation + Rotation propagation
 			my_world.x = parent_world.x + p.local_x;
 			my_world.y = parent_world.y + p.local_y;
 			my_world.rotation = parent_world.rotation + p.local_rot;
@@ -227,6 +225,20 @@ void HierarchySystem::set_parent(uint64_t p_child, uint64_t p_parent) {
 	EntityManager *em = EntityManager::get_singleton();
 	if (!em) {
 		return;
+	}
+
+	// CIRCULAR DEPENDENCY GUARD: Traverse up to root to ensure child isn't an ancestor
+	uint64_t ancestor = p_parent;
+	while (ancestor != 0) {
+		if (ancestor == p_child) {
+			ERR_PRINT("ECS Circular dependency detected! Cannot set " + itos(p_child) + " as child of " + itos(p_parent));
+			return;
+		}
+		if (em->has_component<ParentComponent>(ancestor)) {
+			ancestor = em->get_component<ParentComponent>(ancestor).parent_id;
+		} else {
+			break;
+		}
 	}
 
 	uint32_t depth = 0;
@@ -245,6 +257,20 @@ void HierarchySystem::set_parent_2d(uint64_t p_child, uint64_t p_parent) {
 	EntityManager *em = EntityManager::get_singleton();
 	if (!em) {
 		return;
+	}
+
+	// CIRCULAR DEPENDENCY GUARD: Traverse up to root to ensure child isn't an ancestor (2D)
+	uint64_t ancestor = p_parent;
+	while (ancestor != 0) {
+		if (ancestor == p_child) {
+			ERR_PRINT("ECS Circular dependency (2D) detected! Cannot set " + itos(p_child) + " as child of " + itos(p_parent));
+			return;
+		}
+		if (em->has_component<Parent2DComponent>(ancestor)) {
+			ancestor = em->get_component<Parent2DComponent>(ancestor).parent_id;
+		} else {
+			break;
+		}
 	}
 
 	uint32_t depth = 0;

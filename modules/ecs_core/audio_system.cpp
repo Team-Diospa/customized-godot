@@ -46,7 +46,6 @@ void AudioSystem::_bind_methods() {}
 
 AudioSystem::AudioSystem() {
 	singleton = this;
-	active_voices.resize(1000); // Pre-allocate voices for performance
 
 	EntityManager *em = EntityManager::get_singleton();
 	if (em) {
@@ -67,7 +66,8 @@ void AudioSystem::_on_audio_component_removed(uint64_t p_entity) {
 	if (audios && audios->has(p_entity)) {
 		AudioComponent &ac = audios->get(p_entity);
 		if (ac.stream_rid.is_valid()) {
-			// AudioServer::get_singleton()->free_rid(ac.stream_rid); // TODO: Verify Ridley-style audio RID management
+			// AudioServer::get_singleton()->free_rid(ac.stream_rid); // Godot 4 AudioServer doesn't have free_rid. 
+			// In production, playback is managed via AudioStreamPlayback or SamplePlayback.
 		}
 	}
 }
@@ -94,14 +94,14 @@ void AudioSystem::play_spatial_sound(uint64_t p_entity, RID p_stream) {
 
 void AudioSystem::process_audio_updates() {
 	EntityManager *em = EntityManager::get_singleton();
-	AudioServer *as = AudioServer::get_singleton();
-	if (!em || !as) {
+	if (!em) {
 		return;
 	}
 
 	SparseSet<AudioComponent> *audios = em->get_audios();
-	SparseSet<WorldTransformComponent> *transforms = em->get_world_transforms();
-	if (!audios || !transforms) {
+	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
+
+	if (!audios || !worlds) {
 		return;
 	}
 
@@ -110,10 +110,13 @@ void AudioSystem::process_audio_updates() {
 		uint64_t entity = entities[i];
 		AudioComponent &ac = audios->get(entity);
 
-		if (transforms->has(entity)) {
-			// Update spatial parameters based on WorldTransformComponent (Zen synchronization)
-			// WorldTransformComponent &tc = transforms->get(entity);
-			// Example: as->audio_server_set_listener_2d_orientation(0.0f);
+		if (worlds->has(entity)) {
+			const WorldTransformComponent &wc = worlds->get(entity);
+			// TODO: Integrate with custom AudioServer voice/sample system.
+			// Standard Godot 4 does not expose direct voice positioning here.
+			// if (ac.voice_id != (uint64_t)-1) {
+			// 	AudioServer::get_singleton()->voice_set_position(ac.voice_id, Vector3(wc.x, wc.y, wc.z));
+			// }
 		}
 	}
 }

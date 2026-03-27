@@ -43,6 +43,7 @@ class ECSFrameAllocator {
 	struct ThreadBuffer {
 		uint8_t *ptr = nullptr;
 		uint32_t offset = 0;
+		uint32_t frame_epoch = 0; // New: Lazy reset tracking
 	};
 
 	static thread_local ThreadBuffer tls_buffer;
@@ -50,6 +51,7 @@ class ECSFrameAllocator {
 	static uint32_t global_capacity;
 	static uint32_t thread_chunk_size;
 	static SafeNumeric<uint32_t> next_chunk_idx;
+	static SafeNumeric<uint32_t> global_frame_epoch; // New: Global epoch
 
 	static ECSFrameAllocator *singleton;
 
@@ -58,6 +60,13 @@ public:
 
 	void *alloc(uint32_t p_size) {
 		uint32_t aligned_size = (p_size + 15) & ~15;
+
+		// EPOCH CHECK: Lazy reset per frame
+		if (unlikely(tls_buffer.frame_epoch != global_frame_epoch.get())) {
+			tls_buffer.ptr = nullptr;
+			tls_buffer.offset = 0;
+			tls_buffer.frame_epoch = global_frame_epoch.get();
+		}
 
 		if (unlikely(!tls_buffer.ptr)) {
 			// Pull a chunk from the global pool
@@ -79,6 +88,7 @@ public:
 	}
 
 	void reset_all_threads() {
+		global_frame_epoch.increment();
 		next_chunk_idx.set(0);
 	}
 

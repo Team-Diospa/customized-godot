@@ -69,6 +69,8 @@ public:
 	void fix_all_depths();
 	void fix_all_depths_2d();
 
+	bool validate_hierarchy_integrity();
+
 	HierarchySystem();
 	~HierarchySystem();
 };

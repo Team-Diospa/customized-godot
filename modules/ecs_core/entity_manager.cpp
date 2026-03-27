@@ -31,6 +31,8 @@
 #include "entity_manager.h"
 
 #include "core/object/class_db.h"
+#include "core/config/project_settings.h"
+#include "core/string/print_string.h"
 
 EntityManager *EntityManager::singleton = nullptr;
 
@@ -94,9 +96,33 @@ uint64_t EntityManager::create_entity() {
 		generations.push_back(0);
 		entity_masks.push_back(0);
 	}
+
+	// Generational Overflow Hardening
+	if (generations[index] == 0xFFFFFFFF) {
+		ERR_PRINT("EntityManager: Generational overflow detected for index " + itos(index) + ". Entity recycling failed.");
+		return NULL_ENTITY;
+	}
+
 	uint64_t id = make_entity_id(index, generations[index]);
 	emit_signal("entity_created", id);
 	return id;
+}
+
+uint64_t EntityManager::is_alive(uint64_t p_entity_id) {
+	return is_entity_valid(p_entity_id) ? p_entity_id : (uint64_t)NULL_ENTITY;
+}
+
+bool EntityManager::validate_generational_integrity() {
+	MutexLock lock(entity_mutex);
+	for (uint32_t i = 0; i < (uint32_t)free_list.size(); i++) {
+		uint32_t idx = free_list[i];
+		// If it's in free list, it shouldn't have active components (optional check)
+		// but generations should be correct.
+		if (idx >= (uint32_t)generations.size()) {
+			return false;
+		}
+	}
+	return true;
 }
 
 void EntityManager::create_entities_bulk(int p_count) {
@@ -107,23 +133,42 @@ void EntityManager::create_entities_bulk(int p_count) {
 	MutexLock lock(entity_mutex);
 
 	// Pre-size tables to avoid reallocations during bulk creation
-	int current_size = generations.size();
-	int new_size = current_size + p_count;
+	uint32_t current_total = generations.size();
+	uint32_t new_total = current_total + p_count;
 
-	generations.resize(new_size);
-	entity_masks.resize(new_size);
-	// Note: `entities` array is not directly managed here, as entities are created on demand.
-	// The `generations` and `entity_masks` are the core data structures for entity validity and components.
+	// Check against EntityLimit (ProjectSettings)
+	Variant max_entities_var = ProjectSettings::get_singleton()->get_setting("ecs/limits/max_entities");
+	int limit = max_entities_var.operator int();
+	if (limit > 0 && new_total > (uint32_t)limit) {
+		ERR_PRINT("EntityManager: Bulk creation exceeds ecs/limits/max_entities (" + itos(limit) + ")");
+		return;
+	}
+
+	// Absolute Zen: Zero-allocation pre-sizing for stability
+	generations.resize(new_total);
+	entity_masks.resize(new_total);
 
 	for (int i = 0; i < p_count; i++) {
-		uint32_t idx = current_size + i;
-		generations.write[idx] = 0; // New entities start with generation 0
-		entity_masks.write[idx] = 0; // No components initially
-		// No need to add to free_list, these are new entities.
-		// No need to emit signals for bulk creation, as individual entities are not "created" in the same way.
-		// The `next_entity_index` should be updated to reflect the new highest index.
+		uint32_t idx = current_total + i;
+		generations.write[idx] = 0;
+		entity_masks.write[idx] = 0;
 	}
-	next_entity_index = new_size;
+	
+	next_entity_index = new_total;
+}
+
+uint32_t EntityManager::get_active_entity_count() const {
+	return (uint32_t)next_entity_index - (uint32_t)free_list.size();
+}
+
+Vector<uint64_t> EntityManager::get_entities_with_mask(uint64_t p_mask) const {
+	Vector<uint64_t> results;
+	for (uint32_t i = 0; i < (uint32_t)entity_masks.size(); i++) {
+		if ((entity_masks[i] & p_mask) == p_mask) {
+			results.push_back(make_entity_id(i, generations[i]));
+		}
+	}
+	return results;
 }
 
 void EntityManager::destroy_entity(uint64_t p_entity_id) {
@@ -152,6 +197,9 @@ void EntityManager::destroy_entity(uint64_t p_entity_id) {
 }
 
 bool EntityManager::is_entity_valid(uint64_t p_entity_id) {
+	if (p_entity_id == NULL_ENTITY) {
+		return false;
+	}
 	MutexLock lock(entity_mutex);
 
 	uint32_t index = get_entity_index(p_entity_id);
@@ -171,17 +219,63 @@ void EntityManager::set_entity_position(uint64_t p_entity_id, float p_x, float p
 	}
 }
 
+void EntityManager::tag_entity(uint64_t p_entity_id, const StringName &p_tag_name) {
+	if (!is_entity_valid(p_entity_id)) {
+		return;
+	}
+
+	MutexLock lock(entity_mutex);
+	uint32_t index = get_entity_index(p_entity_id);
+	if (index < (uint32_t)entity_masks.size()) {
+		// Ensure the tag exists in the component_bit_map (tags are just components without data)
+		if (!component_bit_map.has(p_tag_name)) {
+			// Assign a new bit for this tag if it's not already registered
+			// This is a simplified approach; in a real ECS, tags might have their own registry or a dedicated bit pool.
+			// For now, we treat them like components that just set a bit.
+			// This assumes tags are registered via register_component_type or similar mechanism.
+			// If not, we'd need a separate tag registration system.
+			ERR_PRINT("EntityManager: Tag '" + String(p_tag_name) + "' is not registered as a component type. Cannot tag entity.");
+			return;
+		}
+		entity_masks.write[index] |= component_bit_map[p_tag_name];
+	}
+}
+
+Vector<uint64_t> EntityManager::get_entities_with_tag(const StringName &p_tag_name) const {
+	if (!component_bit_map.has(p_tag_name)) {
+		return Vector<uint64_t>();
+	}
+	return get_entities_with_mask(component_bit_map[p_tag_name]);
+}
+
 int EntityManager::get_entity_count() const {
 	MutexLock lock(entity_mutex);
 	return generations.size() - free_list.size();
 }
 
 void EntityManager::add_component_untyped(uint64_t p_entity, const StringName &p_name, const Variant &p_data) {
+	MutexLock lock(registries_mutex);
 	if (registries.has(p_name)) {
 		registries[p_name]->insert_untyped(p_entity, p_data);
-		// Note: Bitmask update for deferred untyped addition is complex
-		// but since these are all standard structs, we can add a name-to-bit mapping if needed.
-		// For now, this satisfies the barebones stabilization requirement.
+
+		// SYNC BITMASK: Crucial for query filtering
+		uint32_t idx = get_entity_index(p_entity);
+		if (idx < (uint32_t)entity_masks.size() && component_bit_map.has(p_name)) {
+			entity_masks.write[idx] |= component_bit_map[p_name];
+		}
+	}
+}
+
+void EntityManager::remove_component_untyped(uint64_t p_entity, const StringName &p_name) {
+	MutexLock lock(registries_mutex);
+	if (registries.has(p_name)) {
+		registries[p_name]->remove(p_entity);
+		
+		// SYNC BITMASK: Clear bit on removal
+		uint32_t idx = get_entity_index(p_entity);
+		if (idx < (uint32_t)entity_masks.size() && component_bit_map.has(p_name)) {
+			entity_masks.write[idx] &= ~component_bit_map[p_name];
+		}
 	}
 }
 

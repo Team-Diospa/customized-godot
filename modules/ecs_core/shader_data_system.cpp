@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "shader_data_system.h"
+#include "entity_manager.h"
 
 ShaderDataSystem *ShaderDataSystem::singleton = nullptr;
 
@@ -49,6 +50,25 @@ ShaderDataSystem::~ShaderDataSystem() {
 }
 
 void ShaderDataSystem::update_horrror_params() {
-	// Logic for procedurally modifying glitch parameters based on global state
-	// will be implemented here. The rendering systems will read these data[] arrays.
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em) {
+		return;
+	}
+
+	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
+	if (!shader_datas) {
+		return;
+	}
+
+	static float time = 0;
+	time += 0.016f; // Placeholder delta
+
+	const Vector<uint64_t> &entities = shader_datas->get_dense_raw();
+	for (int i = 0; i < entities.size(); i++) {
+		ShaderDataComponent &sd = shader_datas->get(entities[i]);
+		// Procedural Glitch: Pulse the first parameter (intensity)
+		sd.data[0] = 0.5f + 0.5f * Math::sin(time * 2.0f); 
+		// Second parameter: random jitter
+		sd.data[1] = Math::randf() * 0.1f;
+	}
 }

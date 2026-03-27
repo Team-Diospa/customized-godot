@@ -34,6 +34,7 @@
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
 #include "core/variant/callable.h"
+#include "core/templates/hash_set.h"
 #include "core/variant/dictionary.h"
 #include "scene/main/node.h" // Keep this for Node inheritance
 
@@ -47,6 +48,7 @@ private:
 
 	Vector<Callable> process_systems;
 	Vector<Callable> physics_process_systems;
+	HashSet<Callable> disabled_systems;
 	Dictionary system_timings;
 
 	uint64_t last_frame_usec = 0;
@@ -69,9 +71,12 @@ public:
 	// The open extension loop registering specific generic callbacks gracefully
 	void register_process_system(const Callable &p_system);
 	void register_physics_system(const Callable &p_system);
+	void set_system_enabled(const Callable &p_system, bool p_enabled);
+	bool is_system_enabled(const Callable &p_system) const;
 
 	uint64_t get_last_frame_usec() const;
 	Dictionary get_system_timings() const;
+	void dump_performance_stats();
 
 	ECSScheduler();
 	~ECSScheduler();

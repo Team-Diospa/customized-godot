@@ -31,6 +31,8 @@
 #pragma once
 
 #include "core/object/object.h"
+#include "core/object/class_db.h"
+#include "core/input/input.h"
 #include "core/typedefs.h"
 
 // Decouples OS input from ECS entities.
@@ -41,6 +43,7 @@ class InputBufferSystem : public Object {
 private:
 	static InputBufferSystem *singleton;
 	bool input_locked = false;
+	HashMap<StringName, StringName> action_map; // New: Virtual-to-Real action mapping
 
 protected:
 	static void _bind_methods();
@@ -48,7 +51,8 @@ protected:
 public:
 	static InputBufferSystem *get_singleton();
 
-	void lock_player_input(bool p_locked) { input_locked = p_locked; }
+	void lock_player_input(bool p_locked);
+	void remap_action(const StringName &p_virtual, const StringName &p_real);
 	void process_input_buffer();
 
 	InputBufferSystem();

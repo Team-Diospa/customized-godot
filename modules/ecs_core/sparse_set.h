@@ -44,9 +44,11 @@ public:
 	virtual void remove(uint64_t p_entity) = 0;
 	virtual void insert_untyped(uint64_t p_entity, const Variant &p_data) = 0;
 	virtual void set_untyped(uint64_t p_entity, const Variant &p_data) = 0;
+	virtual Variant get_untyped(uint64_t p_entity) const = 0;
 	virtual bool has(uint64_t p_entity) const = 0;
 	virtual int size() const = 0;
 	virtual const Vector<uint64_t> &get_dense_raw() const = 0;
+	virtual void reserve(uint32_t p_capacity) = 0;
 	virtual ~ISparseSet() {}
 };
 
@@ -89,6 +91,7 @@ public:
 		}
 
 		if (has(p_entity)) {
+			// Double-insertion protection with explicit component update
 			components.write[sparse[index]] = p_component;
 			return;
 		}
@@ -110,8 +113,65 @@ public:
 		}
 	}
 
+	void clear() {
+		RWLockWrite w(lock);
+		sparse.clear();
+		dense.clear();
+		components.clear();
+	}
+
+	bool is_empty() const {
+		RWLockRead r(lock);
+		return dense.is_empty();
+	}
+
+	uint32_t capacity() const {
+		RWLockRead r(lock);
+		return dense.capacity();
+	}
+
+	int size() const override {
+		RWLockRead r(lock);
+		return (int)dense.size();
+	}
+
+	bool validate_integrity() const {
+		RWLockRead r(lock);
+		for (uint32_t i = 0; i < (uint32_t)dense.size(); i++) {
+			uint64_t entity = dense[i];
+			uint32_t index = get_index(entity);
+			if (index >= (uint32_t)sparse.size() || sparse[index] != i) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	const Vector<uint64_t> &get_dense_raw() const override {
+		return dense;
+	}
+
 	void insert_untyped(uint64_t p_entity, const Variant &p_data) override {
 		insert(p_entity, T(p_data));
+	}
+
+	// Step 2: Usability API
+	int find(const T &p_component) const {
+		RWLockRead r(lock);
+		for (int i = 0; i < (int)components.size(); i++) {
+			if (components[i] == p_component) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	void replace(uint64_t p_entity, const T &p_component) {
+		RWLockWrite w(lock);
+		uint32_t index = get_index(p_entity);
+		if (has_internal(p_entity)) {
+			components.write[sparse[index]] = p_component;
+		}
 	}
 
 	void set_untyped(uint64_t p_entity, const Variant &p_data) override {
@@ -122,10 +182,16 @@ public:
 		}
 	}
 
+	virtual Variant get_untyped(uint64_t p_entity) const override {
+		if (has(p_entity)) {
+			return Variant(get(p_entity));
+		}
+		return Variant();
+	}
+
 	void remove(uint64_t p_entity) override {
 		RWLockWrite w(lock);
-		DEV_ASSERT(has_internal(p_entity));
-		if (!has_internal(p_entity)) {
+		if (p_entity == NULL_ENTITY || !has_internal(p_entity)) {
 			return;
 		}
 
@@ -168,10 +234,46 @@ private:
 	}
 
 public:
+	T &operator[](uint32_t p_dense_idx) {
+		return components.write[p_dense_idx];
+	}
+
+	const T &operator[](uint32_t p_dense_idx) const {
+		return components[p_dense_idx];
+	}
+
+	const T &get(uint64_t p_entity) const {
+		RWLockRead r(lock);
+		if (p_entity == NULL_ENTITY) {
+			static T null_comp = T();
+			return null_comp;
+		}
+
+		uint32_t index = get_index(p_entity);
+		if (index >= (uint32_t)sparse.size() || sparse[index] == (uint32_t)-1) {
+			static T null_comp = T();
+			return null_comp;
+		}
+
+		return components[sparse[index]];
+	}
+
 	T &get(uint64_t p_entity) {
 		RWLockRead r(lock);
+		if (p_entity == NULL_ENTITY) {
+			static T null_comp = T();
+			return null_comp;
+		}
+
+		uint32_t index = get_index(p_entity);
+		// Production-grade bounds enforcement
+		if (index >= (uint32_t)sparse.size() || sparse[index] == (uint32_t)-1) {
+			static T null_comp = T();
+			return null_comp;
+		}
+
 		DEV_ASSERT(has_internal(p_entity));
-		return components.write[sparse[get_index(p_entity)]];
+		return components.write[sparse[index]];
 	}
 
 	template <typename Compare>
@@ -204,11 +306,6 @@ public:
 		}
 	}
 
-	int size() const override {
-		RWLockRead r(lock);
-		return dense.size();
-	}
-	const Vector<uint64_t> &get_dense_raw() const override { return dense; }
 	Vector<T> &get_components() { return components; }
 
 	// Thread-safe raw access for batch processing

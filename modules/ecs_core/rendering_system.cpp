@@ -26,15 +26,15 @@
 /* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include "rendering_system.h"
 
 #include "entity_manager.h"
 
 #include "core/object/class_db.h"
-#include "core/variant/variant.h"
 #include "servers/rendering/rendering_server.h"
+#include "core/variant/typed_array.h"
+#include "octree_system.h"
 
 RenderingSystem *RenderingSystem::singleton = nullptr;
 
@@ -45,6 +45,8 @@ RenderingSystem *RenderingSystem::get_singleton() {
 void RenderingSystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("initialize_hardware_instancing", "mesh", "scenario"), &RenderingSystem::initialize_hardware_instancing);
 	ClassDB::bind_method(D_METHOD("process_render_updates"), &RenderingSystem::process_render_updates);
+	ClassDB::bind_method(D_METHOD("set_frustum_culling_enabled", "enabled"), &RenderingSystem::set_frustum_culling_enabled);
+	ClassDB::bind_method(D_METHOD("set_view_aabb", "aabb"), &RenderingSystem::set_view_aabb);
 }
 
 RenderingSystem::RenderingSystem() {
@@ -90,36 +92,53 @@ void RenderingSystem::process_render_updates() {
 		return;
 	}
 
-	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
-	SparseSet<TransformComponent> *transforms = em->get_transforms();
-
 	int active_count = worlds->size();
+	Vector<uint64_t> visible_entities;
+
+	if (frustum_culling_enabled && ecs::OctreeSystem::get_singleton()) {
+		TypedArray<int> query_res = ecs::OctreeSystem::get_singleton()->query_aabb(current_view_aabb);
+		for (int i = 0; i < query_res.size(); i++) {
+			visible_entities.push_back((uint64_t)((int)query_res[i]));
+		}
+		active_count = visible_entities.size();
+	} else {
+		const Vector<uint64_t> &raw_entities = worlds->get_dense_raw();
+		for (int i = 0; i < raw_entities.size(); i++) {
+			visible_entities.push_back(raw_entities[i]);
+		}
+	}
+
+	if (active_count == 0) {
+		rs->multimesh_allocate_data(multimesh_data_rid, 0, RenderingServer::MULTIMESH_TRANSFORM_3D);
+		return;
+	}
 
 	rs->multimesh_allocate_data(multimesh_data_rid, active_count, RenderingServer::MULTIMESH_TRANSFORM_3D, RenderingServer::MULTIMESH_CUSTOM_DATA_FLOAT);
 
-	PackedFloat32Array buffer;
-	buffer.resize(active_count * 12);
-
-	const uint64_t *__restrict entities = worlds->get_dense_raw().ptr();
-	float *__restrict ptr = buffer.ptrw();
+	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
+	SparseSet<TransformComponent> *transforms = em->get_transforms();
 
 	for (int i = 0; i < active_count; i++) {
-		uint64_t entity = entities[i];
+		uint64_t entity = visible_entities[i];
+		
+		// Fallback check: entity might have been destroyed or lost its transform since query
+		if (!worlds->has(entity)) {
+			continue;
+		}
+
 		const WorldTransformComponent &w = worlds->get(entity);
 
-		int base = i * 12;
-		ptr[base + 0] = 1.0f; // Simplified rotation (Identity) for bare-metal
-		ptr[base + 1] = 0.0f;
-		ptr[base + 2] = 0.0f;
-		ptr[base + 3] = w.x;
-		ptr[base + 4] = 0.0f;
-		ptr[base + 5] = 1.0f;
-		ptr[base + 6] = 0.0f;
-		ptr[base + 7] = w.y;
-		ptr[base + 8] = 0.0f;
-		ptr[base + 9] = 0.0f;
-		ptr[base + 10] = 1.0f;
-		ptr[base + 11] = w.z;
+		Transform3D xform;
+		xform.origin = Vector3(w.x, w.y, w.z);
+		xform.basis = Basis::from_euler(Vector3(w.rot_x, w.rot_y, w.rot_z));
+
+		// Apply scale if Transform component exists
+		if (transforms && transforms->has(entity)) {
+			const TransformComponent &t = transforms->get(entity);
+			xform.basis.scale(Vector3(t.scale_x, t.scale_y, t.scale_z));
+		}
+
+		rs->multimesh_instance_set_transform(multimesh_data_rid, i, xform);
 
 		if (shader_datas && shader_datas->has(entity)) {
 			const ShaderDataComponent &sd = shader_datas->get(entity);
@@ -127,7 +146,4 @@ void RenderingSystem::process_render_updates() {
 			rs->multimesh_instance_set_custom_data(multimesh_data_rid, i, custom_data);
 		}
 	}
-
-	// Bulk upload to GPU
-	rs->multimesh_set_buffer(multimesh_data_rid, buffer);
 }

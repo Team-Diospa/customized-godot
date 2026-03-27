@@ -90,6 +90,11 @@ void ECSCommandBuffer::queue_add_component(uint64_t p_entity_id, const StringNam
 }
 
 void ECSCommandBuffer::execute_deferred_commands() {
+	if (this->executing) {
+		return;
+	}
+	this->executing = true;
+
 	mutex.lock();
 	// Cache the queue locally to prevent infinite recursive injections
 	Vector<Command> queue_copy = command_queue;
@@ -98,6 +103,7 @@ void ECSCommandBuffer::execute_deferred_commands() {
 
 	EntityManager *em = EntityManager::get_singleton();
 	if (!em) {
+		this->executing = false;
 		return;
 	}
 
@@ -106,12 +112,10 @@ void ECSCommandBuffer::execute_deferred_commands() {
 		if (cmd.type == CMD_DESTROY_ENTITY) {
 			em->destroy_entity(cmd.entity_id);
 		} else if (cmd.type == CMD_REMOVE_COMPONENT) {
-			ISparseSet *reg = em->get_registry_untyped(cmd.component_name);
-			if (reg) {
-				reg->remove(cmd.entity_id);
-			}
+			em->remove_component_untyped(cmd.entity_id, cmd.component_name);
 		} else if (cmd.type == CMD_ADD_COMPONENT) {
 			em->add_component_untyped(cmd.entity_id, cmd.component_name, cmd.component_data);
 		}
 	}
+	this->executing = false;
 }

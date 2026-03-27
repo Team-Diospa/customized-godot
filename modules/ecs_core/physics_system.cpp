@@ -63,7 +63,7 @@ PhysicsSystem::PhysicsSystem() {
 }
 
 void PhysicsSystem::_on_transform_removed(uint64_t p_entity) {
-	uint32_t index = (uint32_t)(p_entity & 0xFFFFFFFF);
+	uint32_t index = EntityManager::get_entity_index(p_entity);
 	if (index < (uint32_t)physics_bodies.size()) {
 		unregister_entity_physics(index);
 	}
@@ -121,21 +121,25 @@ void PhysicsSystem::process_physics_updates() {
 		return;
 	}
 
-	SparseSet<TransformComponent> *transforms = em->get_transforms();
-	if (!transforms) {
+	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
+	if (!worlds) {
 		return;
 	}
-	int limit = transforms->size();
+	int limit = worlds->size();
 
-	const Vector<uint64_t> &entities = transforms->get_dense_raw();
+	const Vector<uint64_t> &entities = worlds->get_dense_raw();
 
 	for (int i = 0; i < limit; i++) {
 		uint64_t entity_id = entities[i];
-		TransformComponent &t = transforms->get(entity_id);
+		const WorldTransformComponent &t = worlds->get(entity_id);
 
 		if (entity_id < (uint64_t)physics_bodies.size() && physics_bodies[(int)entity_id].is_valid()) {
 			Transform3D xform;
 			xform.origin = Vector3(t.x, t.y, t.z);
+			
+			// SYNC ROTATION: Convert Euler back to Basis
+			xform.basis = Basis::from_euler(Vector3(t.rot_x, t.rot_y, t.rot_z));
+			
 			PhysicsServer3D::get_singleton()->body_set_state(physics_bodies[(int)entity_id], PhysicsServer3D::BODY_STATE_TRANSFORM, xform);
 		}
 	}

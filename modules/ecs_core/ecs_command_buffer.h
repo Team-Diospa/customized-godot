@@ -62,6 +62,7 @@ private:
 
 	Vector<Command> command_queue;
 	Mutex mutex;
+	bool executing = false;
 
 protected:
 	static void _bind_methods();
@@ -73,6 +74,7 @@ public:
 	void queue_destroy_entity(uint64_t p_entity_id);
 	void queue_remove_component(uint64_t p_entity_id, const StringName &p_comp_name);
 	void queue_add_component(uint64_t p_entity_id, const StringName &p_comp_name, const Variant &p_data);
+	void reserve(int p_capacity);
 
 	// Natively executed exclusively at the exact conclusion of Engine ticks ensuring read safety.
 	void execute_deferred_commands();

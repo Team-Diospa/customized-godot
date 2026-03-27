@@ -49,7 +49,6 @@
 #include "core/os/os.h"
 #include "core/templates/vector.h"
 #include "core/variant/callable.h"
-#include "core/variant/variant.h"
 
 ECSScheduler *ECSScheduler::singleton = nullptr;
 
@@ -61,6 +60,8 @@ void ECSScheduler::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_process_system", "system"), &ECSScheduler::register_process_system);
 	ClassDB::bind_method(D_METHOD("get_system_timings"), &ECSScheduler::get_system_timings);
 	ClassDB::bind_method(D_METHOD("register_physics_system", "system"), &ECSScheduler::register_physics_system);
+	ClassDB::bind_method(D_METHOD("set_system_enabled", "system", "enabled"), &ECSScheduler::set_system_enabled);
+	ClassDB::bind_method(D_METHOD("is_system_enabled", "system"), &ECSScheduler::is_system_enabled);
 	ClassDB::bind_method(D_METHOD("get_last_frame_usec"), &ECSScheduler::get_last_frame_usec);
 }
 
@@ -71,12 +72,35 @@ void ECSScheduler::register_physics_system(const Callable &p_system) {
 	physics_process_systems.push_back(p_system);
 }
 
+void ECSScheduler::set_system_enabled(const Callable &p_system, bool p_enabled) {
+	if (p_enabled) {
+		disabled_systems.erase(p_system);
+	} else {
+		disabled_systems.insert(p_system);
+	}
+}
+
+bool ECSScheduler::is_system_enabled(const Callable &p_system) const {
+	return !disabled_systems.has(p_system);
+}
+
 uint64_t ECSScheduler::get_last_frame_usec() const {
 	return last_frame_usec;
 }
 
 Dictionary ECSScheduler::get_system_timings() const {
 	return system_timings;
+}
+
+void ECSScheduler::dump_performance_stats() {
+	print_line("--- ECS Performance Stats ---");
+	print_line("Last frame time: " + itos(last_frame_usec) + " usec");
+	Array keys = system_timings.keys();
+	for (int i = 0; i < keys.size(); i++) {
+		Variant key = keys[i];
+		print_line("System '" + String(key) + "': " + itos(system_timings[key]) + " usec");
+	}
+	print_line("-----------------------------");
 }
 
 ECSScheduler::ECSScheduler() {
@@ -161,6 +185,9 @@ void ECSScheduler::_notification(int p_what) {
 
 		// 3. Generic Process Systems (Callable Dispatch)
 		for (int i = 0; i < process_systems.size(); i++) {
+			if (disabled_systems.has(process_systems[i])) {
+				continue;
+			}
 			Variant ret;
 			Callable::CallError err;
 			process_systems[i].callp(nullptr, 0, ret, err);
@@ -186,6 +213,9 @@ void ECSScheduler::_notification(int p_what) {
 
 		// 2. Generic Physics Systems (Callable Dispatch)
 		for (int i = 0; i < physics_process_systems.size(); i++) {
+			if (disabled_systems.has(physics_process_systems[i])) {
+				continue;
+			}
 			Variant ret;
 			Callable::CallError err;
 			physics_process_systems[i].callp(nullptr, 0, ret, err);

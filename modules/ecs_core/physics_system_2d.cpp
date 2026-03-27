@@ -64,7 +64,7 @@ PhysicsSystem2D::PhysicsSystem2D() {
 }
 
 void PhysicsSystem2D::_on_transform_removed(uint64_t p_entity) {
-	uint32_t index = (uint32_t)(p_entity & 0xFFFFFFFF);
+	uint32_t index = EntityManager::get_entity_index(p_entity);
 	if (index < (uint32_t)physics_bodies.size()) {
 		unregister_entity_physics(index);
 	}

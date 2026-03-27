@@ -39,13 +39,17 @@ class ECSQuery {
 public:
 	// This executes identical intersections without allocating 'Vector<uint64_t>' on the Heap arbitrarily!
 	// Processing occurs natively via inline closure iterators, saving significant RAM/GC interrupts.
+	static inline bool is_valid(const ISparseSet *p_set) { return p_set != nullptr; }
+
 	/**
 	 * @brief 2-Way Join with Optional Support.
 	 * If p_set_b is null, it acts as a simple iteration of p_set_a.
 	 */
 	template <typename Func>
 	static void execute_join2(const ISparseSet *p_set_a, const ISparseSet *p_set_b, Func p_callback) {
-		if (!p_set_a) return;
+		if (!p_set_a) {
+			return;
+		}
 		if (!p_set_b) {
 			const Vector<uint64_t> &dense = p_set_a->get_dense_raw();
 			for (int i = 0; i < dense.size(); i++) {
@@ -183,5 +187,32 @@ public:
 				p_callback(entity);
 			}
 		}
+	}
+
+	template <typename Func>
+	static int count(const ISparseSet *p_set_a, const ISparseSet *p_set_b = nullptr) {
+		if (!p_set_a) {
+			return 0;
+		}
+		if (!p_set_b) {
+			return p_set_a->size();
+		}
+		
+		int counter = 0;
+		execute_join(p_set_a, p_set_b, [&](uint64_t e) {
+			counter++;
+		});
+		return counter;
+	}
+
+	template <typename T>
+	static uint64_t find_first(const ISparseSet *p_set_a, const ISparseSet *p_set_b = nullptr) {
+		uint64_t result = NULL_ENTITY;
+		execute_join(p_set_a, p_set_b, [&](uint64_t e) {
+			if (result == NULL_ENTITY) {
+				result = e;
+			}
+		});
+		return result;
 	}
 };
