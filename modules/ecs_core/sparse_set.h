@@ -151,6 +151,12 @@ public:
 		return dense;
 	}
 
+	void reserve(uint32_t p_capacity) override {
+		RWLockWrite w(lock);
+		dense.reserve(p_capacity);
+		components.reserve(p_capacity);
+	}
+
 	void insert_untyped(uint64_t p_entity, const Variant &p_data) override {
 		insert(p_entity, T(p_data));
 	}
