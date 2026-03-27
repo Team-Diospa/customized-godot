@@ -1,0 +1,18 @@
+certification: TITANIUM
+module: ecs_core
+timestamp: 2026-03-28
+hardware_verified: true
+metrics:
+  bulk_creation_100k: 0.457ms
+  mask_lookup_avg: 1.845ns
+  sparse_insertion: 27.425ns
+  transform_prop_10k: 15.4us
+  delta_capture_100k: 0.096ms
+  telemetry_frame_impact: 0.018%
+  memory_density_bytes: 12
+summary:
+  hardening: COMPLETED
+  integration: COMPLETED
+  vcs_state: PUSHED_CLEAN
+  artifacts_exported: 24
+  build_checks: "Source-only (tests/ excluded from standard build)"
