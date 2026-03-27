@@ -57,7 +57,15 @@ struct Transform2DComponent {
 			x = y = rotation = 0; scale_x = scale_y = 1.0f;
 		}
 	}
+	operator Variant() const {
+		Transform2D t;
+		t.set_origin(Vector2(x, y));
+		t.set_rotation(rotation);
+		t.set_scale(Vector2(scale_x, scale_y));
+		return t;
+	}
 };
+
 struct TransformComponent {
 	float x, y, z;
 	float scale_x = 1.0f, scale_y = 1.0f, scale_z = 1.0f;
@@ -78,6 +86,12 @@ struct TransformComponent {
 			scale_x = scale_y = scale_z = 1.0f;
 		}
 	}
+	operator Variant() const {
+		Transform3D t;
+		t.origin = Vector3(x, y, z);
+		t.basis.set_euler_scale(Vector3(0, 0, 0), Vector3(scale_x, scale_y, scale_z));
+		return t;
+	}
 };
 
 // Phase 14 Production Hierarchy Components
@@ -93,12 +107,23 @@ struct ParentComponent {
 			parent_id = p_var;
 		}
 	}
+	operator Variant() const {
+		return parent_id;
+	}
 };
 struct Parent2DComponent {
 	uint64_t parent_id;
 	float local_x, local_y, local_rot;
 	uint32_t depth = 0;
 	Parent2DComponent() : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {}
+	Parent2DComponent(const Variant &p_var) : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {
+		if (p_var.get_type() == Variant::INT) {
+			parent_id = p_var;
+		}
+	}
+	operator Variant() const {
+		return parent_id;
+	}
 };
 
 struct AABBComponent {
@@ -106,6 +131,18 @@ struct AABBComponent {
 	float size_x, size_y, size_z;
 	AABBComponent() : x(0), y(0), z(0), size_x(1), size_y(1), size_z(1) {}
 	AABBComponent(float p_x, float p_y, float p_z, float p_sx, float p_sy, float p_sz) : x(p_x), y(p_y), z(p_z), size_x(p_sx), size_y(p_sy), size_z(p_sz) {}
+	AABBComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::AABB) {
+			AABB a = p_var;
+			x = a.position.x; y = a.position.y; z = a.position.z;
+			size_x = a.size.x; size_y = a.size.y; size_z = a.size.z;
+		} else {
+			x = y = z = 0; size_x = size_y = size_z = 1;
+		}
+	}
+	operator Variant() const {
+		return AABB(Vector3(x, y, z), Vector3(size_x, size_y, size_z));
+	}
 };
 
 struct WorldTransformComponent {
@@ -123,6 +160,12 @@ struct WorldTransformComponent {
 			x = y = z = rot_x = rot_y = rot_z = 0;
 		}
 	}
+	operator Variant() const {
+		Transform3D t;
+		t.origin = Vector3(x, y, z);
+		t.basis.set_euler(Vector3(rot_x, rot_y, rot_z));
+		return t;
+	}
 };
 struct WorldTransform2DComponent {
 	float x, y, rotation;
@@ -136,6 +179,12 @@ struct WorldTransform2DComponent {
 			x = y = rotation = 0;
 		}
 	}
+	operator Variant() const {
+		Transform2D t;
+		t.set_origin(Vector2(x, y));
+		t.set_rotation(rotation);
+		return t;
+	}
 };
 
 // Phase 15 Final Certification Zen Components
@@ -143,6 +192,9 @@ struct DebugComponent {
 	StringName label;
 	DebugComponent() : label("") {}
 	DebugComponent(const Variant &p_var) : label(p_var) {}
+	operator Variant() const {
+		return label;
+	}
 };
 
 // Phase 12 Horror Infrastructure Components
@@ -170,6 +222,14 @@ struct AudioComponent {
 			}
 		}
 	}
+	operator Variant() const {
+		Dictionary d;
+		d["volume"] = volume;
+		d["pitch"] = pitch;
+		d["is_3d"] = is_3d;
+		d["stream_rid"] = stream_rid;
+		return d;
+	}
 };
 struct InputComponent {
 	float move_x, move_y;
@@ -194,6 +254,13 @@ struct InputComponent {
 				action_press = d["action_press"];
 			}
 		}
+	}
+	operator Variant() const {
+		Dictionary d;
+		d["move_x"] = move_x;
+		d["move_y"] = move_y;
+		d["action_press"] = action_press;
+		return d;
 	}
 };
 
@@ -220,6 +287,13 @@ struct AnimationComponent {
 			}
 		}
 	}
+	operator Variant() const {
+		Dictionary d;
+		d["fps"] = fps;
+		d["total_frames"] = total_frames;
+		d["current_frame"] = current_frame;
+		return d;
+	}
 };
 struct ShaderDataComponent {
 	float data[8];
@@ -239,6 +313,14 @@ struct ShaderDataComponent {
 			}
 		}
 	}
+	operator Variant() const {
+		PackedFloat32Array arr;
+		arr.resize(8);
+		for (int i = 0; i < 8; i++) {
+			arr.ptrw()[i] = data[i];
+		}
+		return arr;
+	}
 };
 
 struct PhysicsBody3DComponent {
@@ -254,6 +336,9 @@ struct PhysicsBody3DComponent {
 			body = p_var;
 		}
 	}
+	operator Variant() const {
+		return body;
+	}
 };
 
 struct KinematicController3DComponent {
@@ -265,8 +350,13 @@ struct KinematicController3DComponent {
 	KinematicController3DComponent(const Variant &p_var) {
 		if (p_var.get_type() == Variant::VECTOR3) {
 			Vector3 v = p_var;
-			velocity[0] = v.x; velocity[1] = v.y; velocity[2] = v.z;
+			velocity[0] = v.x;
+			velocity[1] = v.y;
+			velocity[2] = v.z;
 		}
+	}
+	operator Variant() const {
+		return Vector3(velocity[0], velocity[1], velocity[2]);
 	}
 };
 
@@ -281,6 +371,9 @@ struct ECSSkeletonBridgeComponent {
 			skeleton = p_var;
 		}
 	}
+	operator Variant() const {
+		return skeleton;
+	}
 };
 
 struct BoneBufferComponent {
@@ -288,6 +381,22 @@ struct BoneBufferComponent {
 
 	BoneBufferComponent() {}
 	BoneBufferComponent(int p_count) { transforms.resize(p_count); }
+	BoneBufferComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::ARRAY) {
+			Array arr = p_var;
+			transforms.resize(arr.size());
+			for (int i = 0; i < arr.size(); i++) {
+				transforms.write[i] = arr[i];
+			}
+		}
+	}
+	operator Variant() const {
+		Array arr;
+		for (int i = 0; i < transforms.size(); i++) {
+			arr.push_back(transforms[i]);
+		}
+		return arr;
+	}
 };
 
 struct NavigationAgent3DComponent {
@@ -306,6 +415,9 @@ struct NavigationAgent3DComponent {
 			agent = p_var;
 		}
 	}
+	operator Variant() const {
+		return agent;
+	}
 };
 
 struct AudioVoiceComponent {
@@ -321,6 +433,9 @@ struct AudioVoiceComponent {
 			stream_instance = p_var;
 		}
 	}
+	operator Variant() const {
+		return stream_instance;
+	}
 };
 
 struct ECSTelemetryComponent {
@@ -330,8 +445,15 @@ struct ECSTelemetryComponent {
 	ECSTelemetryComponent(const Variant &p_var) {
 		if (p_var.get_type() == Variant::DICTIONARY) {
 			Dictionary d = p_var;
-			last_execution_time = d["time"];
+			if (d.has("time")) {
+				last_execution_time = d["time"];
+			}
 		}
+	}
+	operator Variant() const {
+		Dictionary d;
+		d["time"] = last_execution_time;
+		return d;
 	}
 };
 
