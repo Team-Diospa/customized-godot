@@ -34,9 +34,62 @@
 
 #include "core/typedefs.h"
 
+#include "core/variant/typed_array.h"
+#include "core/object/ref_counted.h"
+#include "core/object/class_db.h"
+#include "entity_manager.h"
+
 // Replaces previously destructive tuple evaluation with zero-allocation Functional pipelines.
-class ECSQuery {
+class ECSQuery : public RefCounted {
+	GDCLASS(ECSQuery, RefCounted);
+
+	uint64_t with_mask = 0;
+	uint64_t without_mask = 0;
+
+protected:
+	static void _bind_methods() {
+		ClassDB::bind_static_method("ECSQuery", D_METHOD("create"), &ECSQuery::create);
+		ClassDB::bind_method(D_METHOD("with_component", "bit"), &ECSQuery::with_component);
+		ClassDB::bind_method(D_METHOD("without_component", "bit"), &ECSQuery::without_component);
+		ClassDB::bind_method(D_METHOD("execute"), &ECSQuery::execute);
+	}
+
 public:
+	static Ref<ECSQuery> create() {
+		return memnew(ECSQuery);
+	}
+
+	Ref<ECSQuery> with_component(uint64_t p_bit) {
+		with_mask |= p_bit;
+		return Ref<ECSQuery>(this);
+	}
+
+	Ref<ECSQuery> without_component(uint64_t p_bit) {
+		without_mask |= p_bit;
+		return Ref<ECSQuery>(this);
+	}
+
+	TypedArray<int> execute() {
+		TypedArray<int> results;
+		EntityManager *em = EntityManager::get_singleton();
+		if (!em) {
+			return results;
+		}
+
+		// Heuristic: iterate the smallest subset found in the bitmask
+		// For barebones, we'll perform a linear sweep over all entities
+		// and check the combined bitmask. (Optimization to sparse-sparse join scheduled for Step 2)
+		int entity_count = em->get_entity_count();
+		for (int i = 0; i < entity_count; i++) {
+			uint64_t mask = em->get_entity_mask(i);
+			if ((mask & with_mask) == with_mask && (mask & without_mask) == 0) {
+				results.push_back(i);
+			}
+		}
+
+		return results;
+	}
+
 	// This executes identical intersections without allocating 'Vector<uint64_t>' on the Heap arbitrarily!
 	// Processing occurs natively via inline closure iterators, saving significant RAM/GC interrupts.
 	static inline bool is_valid(const ISparseSet *p_set) { return p_set != nullptr; }

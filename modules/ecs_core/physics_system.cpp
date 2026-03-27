@@ -70,7 +70,9 @@ PhysicsSystem::~PhysicsSystem() {
 
 void PhysicsSystem::register_entity_physics(uint64_t p_entity, RID p_shape, RID p_space, int p_mode) {
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return;
+	if (!em) {
+		return;
+	}
 
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 	RID new_body = ps->body_create();
@@ -97,18 +99,24 @@ void PhysicsSystem::unregister_entity_physics(uint64_t p_entity) {
 
 void PhysicsSystem::process_physics_updates() {
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return;
+	if (!em) {
+		return;
+	}
 
 	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
 	SparseSet<PhysicsBody3DComponent> *bodies = em->get_physics_bodies_3d();
-	if (!worlds || !bodies) return;
+	if (!worlds || !bodies) {
+		return;
+	}
 
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 	const Vector<uint64_t> &entities = bodies->get_dense_raw();
 
 	for (int i = 0; i < entities.size(); i++) {
 		uint64_t entity = entities[i];
-		if (!worlds->has(entity)) continue;
+		if (!worlds->has(entity)) {
+			continue;
+		}
 
 		const PhysicsBody3DComponent &b = bodies->get(entity);
 		const WorldTransformComponent &wt = worlds->get(entity);
@@ -124,7 +132,9 @@ void PhysicsSystem::process_physics_updates() {
 
 void PhysicsSystem::_on_physics_component_removed(uint64_t p_entity) {
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) return;
+	if (!em) {
+		return;
+	}
 
 	SparseSet<PhysicsBody3DComponent> *bodies = em->get_physics_bodies_3d();
 	if (bodies && bodies->has(p_entity)) {

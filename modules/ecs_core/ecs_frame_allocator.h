@@ -92,6 +92,9 @@ public:
 		next_chunk_idx.set(0);
 	}
 
+	uint32_t get_capacity() const { return global_capacity; }
+	uint32_t get_used() const { return next_chunk_idx.get() * thread_chunk_size; }
+
 	void initialize(uint32_t p_total_capacity, uint32_t p_per_thread = 1024 * 1024) {
 		global_capacity = p_total_capacity;
 		thread_chunk_size = p_per_thread;

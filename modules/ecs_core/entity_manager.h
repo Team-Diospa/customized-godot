@@ -99,12 +99,13 @@ struct Parent2DComponent {
 	float local_x, local_y, local_rot;
 	uint32_t depth = 0;
 	Parent2DComponent() : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {}
-	Parent2DComponent(uint64_t p_id, float p_lx, float p_ly, float p_rot, uint32_t p_depth = 0) : parent_id(p_id), local_x(p_lx), local_y(p_ly), local_rot(p_rot), depth(p_depth) {}
-	Parent2DComponent(const Variant &p_var) : parent_id(0), local_x(0), local_y(0), local_rot(0), depth(0) {
-		if (p_var.get_type() == Variant::INT) {
-			parent_id = p_var;
-		}
-	}
+};
+
+struct AABBComponent {
+	float x, y, z;
+	float size_x, size_y, size_z;
+	AABBComponent() : x(0), y(0), z(0), size_x(1), size_y(1), size_z(1) {}
+	AABBComponent(float p_x, float p_y, float p_z, float p_sx, float p_sy, float p_sz) : x(p_x), y(p_y), z(p_z), size_x(p_sx), size_y(p_sy), size_z(p_sz) {}
 };
 
 struct WorldTransformComponent {
@@ -376,6 +377,7 @@ public:
 		BIT_AUDIO_VOICE = 1ULL << 15,
 		BIT_NAVIGATION_3D = 1ULL << 16,
 		BIT_TELEMETRY = 1ULL << 17,
+		BIT_AABB = 1ULL << 18,
 	};
 
 	static EntityManager *get_singleton();
@@ -399,6 +401,7 @@ public:
 	Vector<uint64_t> get_entities_with_mask(uint64_t p_mask) const;
 	void tag_entity(uint64_t p_entity_id, const StringName &p_tag_name);
 	Vector<uint64_t> get_entities_with_tag(const StringName &p_tag_name) const;
+	Ref<class ECSQuery> create_query();
 
 	// Extraction Pipeline formatting 64-bit bounds inherently perfectly natively.
 	static inline uint32_t get_entity_index(uint64_t p_id) { return (uint32_t)(p_id & 0xFFFFFFFF); }
@@ -508,7 +511,7 @@ inline void EntityManager::add_component<TransformComponent>(uint64_t p_entity, 
 	get_registry<TransformComponent>("TransformComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_TRANSFORM;
+		entity_masks.ptrw()[idx] |= BIT_TRANSFORM;
 	}
 }
 template <>
@@ -525,7 +528,7 @@ inline void EntityManager::add_component<Transform2DComponent>(uint64_t p_entity
 	get_registry<Transform2DComponent>("Transform2DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_TRANSFORM_2D;
+		entity_masks.ptrw()[idx] |= BIT_TRANSFORM_2D;
 	}
 }
 template <>
@@ -542,7 +545,7 @@ inline void EntityManager::add_component<ParentComponent>(uint64_t p_entity, con
 	get_registry<ParentComponent>("ParentComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_PARENTS;
+		entity_masks.ptrw()[idx] |= BIT_PARENTS;
 	}
 }
 
@@ -560,7 +563,7 @@ inline void EntityManager::add_component<WorldTransformComponent>(uint64_t p_ent
 	get_registry<WorldTransformComponent>("WorldTransformComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM;
+		entity_masks.ptrw()[idx] |= BIT_WORLD_TRANSFORM;
 	}
 }
 
@@ -578,7 +581,7 @@ inline void EntityManager::add_component<WorldTransform2DComponent>(uint64_t p_e
 	get_registry<WorldTransform2DComponent>("WorldTransform2DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_WORLD_TRANSFORM_2D;
+		entity_masks.ptrw()[idx] |= BIT_WORLD_TRANSFORM_2D;
 	}
 }
 template <>
@@ -595,7 +598,7 @@ inline void EntityManager::add_component<Parent2DComponent>(uint64_t p_entity, c
 	get_registry<Parent2DComponent>("Parent2DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_PARENTS_2D;
+		entity_masks.ptrw()[idx] |= BIT_PARENTS_2D;
 	}
 }
 
@@ -613,7 +616,7 @@ inline void EntityManager::add_component<DebugComponent>(uint64_t p_entity, cons
 	get_registry<DebugComponent>("DebugComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_DEBUG;
+		entity_masks.ptrw()[idx] |= BIT_DEBUG;
 	}
 }
 template <>
@@ -631,7 +634,7 @@ inline void EntityManager::add_component<AudioComponent>(uint64_t p_entity, cons
 	get_registry<AudioComponent>("AudioComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_AUDIO;
+		entity_masks.ptrw()[idx] |= BIT_AUDIO;
 	}
 }
 template <>
@@ -648,7 +651,7 @@ inline void EntityManager::add_component<InputComponent>(uint64_t p_entity, cons
 	get_registry<InputComponent>("InputComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_INPUT;
+		entity_masks.ptrw()[idx] |= BIT_INPUT;
 	}
 }
 template <>
@@ -665,7 +668,7 @@ inline void EntityManager::add_component<AnimationComponent>(uint64_t p_entity, 
 	get_registry<AnimationComponent>("AnimationComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_ANIMATION;
+		entity_masks.ptrw()[idx] |= BIT_ANIMATION;
 	}
 }
 template <>
@@ -682,7 +685,7 @@ inline void EntityManager::add_component<ShaderDataComponent>(uint64_t p_entity,
 	get_registry<ShaderDataComponent>("ShaderDataComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_SHADER_DATA;
+		entity_masks.ptrw()[idx] |= BIT_SHADER_DATA;
 	}
 }
 template <>
@@ -698,7 +701,7 @@ inline void EntityManager::add_component<PhysicsBody3DComponent>(uint64_t p_enti
 	get_registry<PhysicsBody3DComponent>("PhysicsBody3DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_PHYSICS_3D;
+		entity_masks.ptrw()[idx] |= BIT_PHYSICS_3D;
 	}
 }
 template <>
@@ -715,7 +718,7 @@ inline void EntityManager::add_component<KinematicController3DComponent>(uint64_
 	get_registry<KinematicController3DComponent>("KinematicController3DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_KINEMATIC_3D;
+		entity_masks.ptrw()[idx] |= BIT_KINEMATIC_3D;
 	}
 }
 template <>
@@ -731,7 +734,7 @@ inline void EntityManager::add_component<ECSSkeletonBridgeComponent>(uint64_t p_
 	get_registry<ECSSkeletonBridgeComponent>("ECSSkeletonBridgeComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_SKELETON_BRIDGE;
+		entity_masks.ptrw()[idx] |= BIT_SKELETON_BRIDGE;
 	}
 }
 template <>
@@ -748,7 +751,7 @@ inline void EntityManager::add_component<BoneBufferComponent>(uint64_t p_entity,
 	get_registry<BoneBufferComponent>("BoneBufferComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_BONE_BUFFER;
+		entity_masks.ptrw()[idx] |= BIT_BONE_BUFFER;
 	}
 }
 template <>
@@ -764,7 +767,7 @@ inline void EntityManager::add_component<AudioVoiceComponent>(uint64_t p_entity,
 	get_registry<AudioVoiceComponent>("AudioVoiceComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_AUDIO_VOICE;
+		entity_masks.ptrw()[idx] |= BIT_AUDIO_VOICE;
 	}
 }
 template <>
@@ -781,7 +784,7 @@ inline void EntityManager::add_component<NavigationAgent3DComponent>(uint64_t p_
 	get_registry<NavigationAgent3DComponent>("NavigationAgent3DComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_NAVIGATION_3D;
+		entity_masks.ptrw()[idx] |= BIT_NAVIGATION_3D;
 	}
 }
 template <>
@@ -798,7 +801,7 @@ inline void EntityManager::add_component<ECSTelemetryComponent>(uint64_t p_entit
 	get_registry<ECSTelemetryComponent>("ECSTelemetryComponent")->insert(p_entity, p_comp);
 	uint32_t idx = get_entity_index(p_entity);
 	if (idx < (uint32_t)entity_masks.size()) {
-		entity_masks.write[idx] |= BIT_TELEMETRY;
+		entity_masks.ptrw()[idx] |= BIT_TELEMETRY;
 	}
 }
 template <>
@@ -808,4 +811,21 @@ inline ECSTelemetryComponent &EntityManager::get_component<ECSTelemetryComponent
 template <>
 inline bool EntityManager::has_component<ECSTelemetryComponent>(uint64_t p_entity) {
 	return get_registry<ECSTelemetryComponent>("ECSTelemetryComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<AABBComponent>(uint64_t p_entity, const AABBComponent &p_comp) {
+	get_registry<AABBComponent>("AABBComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.ptrw()[idx] |= BIT_AABB;
+	}
+}
+template <>
+inline AABBComponent &EntityManager::get_component<AABBComponent>(uint64_t p_entity) {
+	return get_registry<AABBComponent>("AABBComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<AABBComponent>(uint64_t p_entity) {
+	return get_registry<AABBComponent>("AABBComponent")->has(p_entity);
 }

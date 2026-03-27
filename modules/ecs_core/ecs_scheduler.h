@@ -37,7 +37,11 @@
 #include "core/variant/callable.h"
 #include "core/templates/hash_set.h"
 #include "core/variant/dictionary.h"
-#include "scene/main/node.h" // Keep this for Node inheritance
+#include "scene/main/node.h"
+
+// Forward declaration if needed, but we have the header now
+namespace ecs { class NativeOctree; }
+using ecs::NativeOctree;
 
 // Abstract Registry evaluating pipelines dynamically via explicitly serialized Callable Arrays.
 // Eliminates structurally hardcoded 'Singletons.process()' hooks forcing pipeline constraints.
@@ -59,6 +63,7 @@ private:
 	HashSet<Callable> disabled_systems;
 	Dictionary system_timings;
 
+	NativeOctree *octree = nullptr;
 	uint64_t last_frame_usec = 0;
 
 protected:
@@ -86,7 +91,7 @@ public:
 	uint64_t get_last_frame_usec() const;
 	Dictionary get_system_timings() const;
 	Dictionary get_detailed_stats() const; // New: Step 2 Hardware Telemetry
-	void validate_simulation_integrity(); // New: Step 4 Safety
+	void validate_simulation_integrity() const; // New: Step 4 Safety
 	void dump_performance_stats();
 
 	ECSScheduler();

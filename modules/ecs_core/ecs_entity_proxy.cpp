@@ -7,6 +7,12 @@
 
 #include "core/object/class_db.h"
 
+void ECSEntityProxy::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_entity", "id"), &ECSEntityProxy::set_entity);
+	ClassDB::bind_method(D_METHOD("get_entity"), &ECSEntityProxy::get_entity);
+	ClassDB::bind_method(D_METHOD("sync_telemetry"), &ECSEntityProxy::sync_telemetry);
+}
+
 void ECSEntityProxy::set_entity(uint64_t p_id) {
 	entity_id = p_id;
 	notify_property_list_changed();
@@ -159,3 +165,12 @@ void ECSEntityProxy::_get_property_list(List<PropertyInfo> *p_list) const {
 }
 
 ECSEntityProxy::ECSEntityProxy() {}
+
+void ECSEntityProxy::sync_telemetry() {
+	// Performance "Fast-Path": skips full notify_property_list_changed()
+	// and only pushes visual updates to the editor if active.
+	EntityManager *em = EntityManager::get_singleton();
+	if (em && em->has_component<ECSTelemetryComponent>(entity_id)) {
+		emit_signal("property_list_changed"); 
+	}
+}

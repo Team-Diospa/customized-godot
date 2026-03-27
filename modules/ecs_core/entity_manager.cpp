@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "entity_manager.h"
+#include "ecs_query.h"
 
 #include "core/object/class_db.h"
 #include "core/config/project_settings.h"
@@ -50,6 +51,7 @@ void EntityManager::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("update_component_untyped", "entity", "name", "data"), &EntityManager::update_component_untyped);
 	ClassDB::bind_method(D_METHOD("get_entity_proxy", "entity"), &EntityManager::get_entity_proxy);
 	ClassDB::bind_method(D_METHOD("set_entity_position", "entity", "x", "y", "z"), &EntityManager::set_entity_position);
+	ClassDB::bind_method(D_METHOD("create_query"), &EntityManager::create_query);
 
 	ADD_SIGNAL(MethodInfo("entity_created", PropertyInfo(Variant::INT, "entity_id")));
 	ADD_SIGNAL(MethodInfo("entity_destroyed", PropertyInfo(Variant::INT, "entity_id")));
@@ -77,6 +79,7 @@ EntityManager::EntityManager() {
 	register_component_type<BoneBufferComponent>("BoneBufferComponent", BIT_BONE_BUFFER);
 	register_component_type<AudioVoiceComponent>("AudioVoiceComponent", BIT_AUDIO_VOICE);
 	register_component_type<NavigationAgent3DComponent>("NavigationAgent3DComponent", BIT_NAVIGATION_3D);
+	register_component_type<AABBComponent>("AABBComponent", BIT_AABB);
 }
 
 EntityManager::~EntityManager() {
@@ -156,8 +159,8 @@ void EntityManager::create_entities_bulk(int p_count) {
 
 	for (int i = 0; i < p_count; i++) {
 		uint32_t idx = current_total + i;
-		generations.write[idx] = 0;
-		entity_masks.write[idx] = 0;
+		generations.ptrw()[idx] = 0;
+		entity_masks.ptrw()[idx] = 0;
 	}
 	
 	next_entity_index = new_total;
@@ -189,8 +192,8 @@ void EntityManager::destroy_entity(uint64_t p_entity_id) {
 		return; // Already destroyed or invalid
 	}
 
-	generations.write[index]++; // Invalidate existing IDs
-	entity_masks.write[index] = 0; // Clear mask
+	generations.ptrw()[index]++; // Invalidate existing IDs
+	entity_masks.ptrw()[index] = 0; // Clear mask
 	free_list.push_back(index);
 
 	for (const KeyValue<StringName, ISparseSet *> &E : registries) {
@@ -243,7 +246,7 @@ void EntityManager::tag_entity(uint64_t p_entity_id, const StringName &p_tag_nam
 			ERR_PRINT("EntityManager: Tag '" + String(p_tag_name) + "' is not registered as a component type. Cannot tag entity.");
 			return;
 		}
-		entity_masks.write[index] |= component_bit_map[p_tag_name];
+		entity_masks.ptrw()[index] |= component_bit_map[p_tag_name];
 	}
 }
 
@@ -267,7 +270,7 @@ void EntityManager::add_component_untyped(uint64_t p_entity, const StringName &p
 		// SYNC BITMASK: Crucial for query filtering
 		uint32_t idx = get_entity_index(p_entity);
 		if (idx < (uint32_t)entity_masks.size() && component_bit_map.has(p_name)) {
-			entity_masks.write[idx] |= component_bit_map[p_name];
+			entity_masks.ptrw()[idx] |= component_bit_map[p_name];
 		}
 	}
 }
@@ -280,7 +283,7 @@ void EntityManager::remove_component_untyped(uint64_t p_entity, const StringName
 		// SYNC BITMASK: Clear bit on removal
 		uint32_t idx = get_entity_index(p_entity);
 		if (idx < (uint32_t)entity_masks.size() && component_bit_map.has(p_name)) {
-			entity_masks.write[idx] &= ~component_bit_map[p_name];
+			entity_masks.ptrw()[idx] &= ~component_bit_map[p_name];
 		}
 	}
 }
@@ -300,4 +303,8 @@ Object *EntityManager::get_entity_proxy(uint64_t p_entity) {
 	ECSEntityProxy *proxy = memnew(ECSEntityProxy);
 	proxy->set_entity(p_entity);
 	return proxy;
+}
+
+Ref<ECSQuery> EntityManager::create_query() {
+	return ECSQuery::create();
 }

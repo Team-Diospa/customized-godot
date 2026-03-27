@@ -49,7 +49,7 @@ ShaderDataSystem::~ShaderDataSystem() {
 	}
 }
 
-void ShaderDataSystem::update_horrror_params() {
+void ShaderDataSystem::update_horror_params() {
 	EntityManager *em = EntityManager::get_singleton();
 	if (!em) {
 		return;

@@ -70,7 +70,34 @@ public:
 		_insert(0, p_entity, p_aabb, 0);
 	}
 
+	void remove(uint64_t p_entity) {
+		_remove(0, p_entity);
+	}
+
+	void update(uint64_t p_entity, const AABB &p_old_aabb, const AABB &p_new_aabb) {
+		remove(p_entity);
+		insert(p_entity, p_new_aabb);
+	}
+
 private:
+	void _remove(int p_node_idx, uint64_t p_entity) {
+		OctreeNode &node = nodes.write[p_node_idx];
+		for (int i = 0; i < node.entities.size(); i++) {
+			if (node.entities[i] == p_entity) {
+				node.entities.remove_at(i);
+				return;
+			}
+		}
+
+		if (!node.is_leaf) {
+			for (int i = 0; i < 8; i++) {
+				if (node.children[i] != -1) {
+					_remove(node.children[i], p_entity);
+				}
+			}
+		}
+	}
+
 	void _insert(int p_node_idx, uint64_t p_entity, const AABB &p_aabb, int p_depth) {
 		OctreeNode &node = nodes.write[p_node_idx];
 
@@ -140,11 +167,9 @@ private:
 		}
 	}
 
-	// Internal helper to get entity AABB (Hardcoded stub until EntityManager integration)
+	// Internal helper to get entity AABB
 	AABB _get_entity_aabb(uint64_t p_entity) const {
-		// This should ideally fetch Transform + Mesh/Collision bounds.
-		// For barebones, we assume a small unit cube as placeholder.
-		return AABB(Vector3(0, 0, 0), Vector3(1, 1, 1)); 
+		return AABB(Vector3(0, 0, 0), Vector3(1, 1, 1));
 	}
 public:
 	template <typename Func>

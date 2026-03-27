@@ -37,6 +37,7 @@
 #include "ecs_frame_allocator.h"
 #include "ecs_prefab_bridge.h"
 #include "ecs_scheduler.h"
+#include "ecs_query.h"
 #include "ecs_serializer.h"
 #include "entity_manager.h"
 #include "hierarchy_system.h"
@@ -94,6 +95,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ClassDB::register_class<ShaderDataSystem>();
 	ClassDB::register_class<NavigationSystem>();
 	ClassDB::register_class<ECSEntityProxy>();
+	ClassDB::register_class<ECSQuery>();
 
 	ptr_entity_manager = memnew(EntityManager);
 	ptr_ecs_serializer = memnew(ECSSerializer);
@@ -129,6 +131,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("AnimationSystem", (Object *)AnimationSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ShaderDataSystem", (Object *)ShaderDataSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationSystem", (Object *)NavigationSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSCommandBuffer", (Object *)ECSCommandBuffer::get_singleton()));
 
 	ptr_ecs_frame_allocator = memnew(ecs::ECSFrameAllocator);
 	ptr_ecs_frame_allocator->initialize(1024 * 1024 * 4); // 4MB Buffer

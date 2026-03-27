@@ -16,6 +16,7 @@ protected:
 public:
 	void set_entity(uint64_t p_id);
 	uint64_t get_entity() const;
+	void sync_telemetry();
 
 	ECSEntityProxy();
 };

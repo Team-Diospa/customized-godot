@@ -37,12 +37,13 @@
 #include "entity_manager.h"
 #include "hierarchy_system.h"
 #include "input_buffer_system.h"
+#include "native_octree.h"
+#include "navigation_system.h"
 #include "physics_system.h"
 #include "physics_system_2d.h"
 #include "rendering_system.h"
 #include "rendering_system_2d.h"
 #include "shader_data_system.h"
-#include "navigation_system.h"
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
@@ -50,6 +51,7 @@
 #include "core/os/os.h"
 #include "core/templates/vector.h"
 #include "core/variant/callable.h"
+
 
 ECSScheduler *ECSScheduler::singleton = nullptr;
 
@@ -107,6 +109,10 @@ Dictionary ECSScheduler::get_detailed_stats() const {
 	if (em) {
 		stats["_entity_count"] = em->get_active_entity_count();
 		stats["_frame_usec"] = last_frame_usec;
+		if (ecs::ECSFrameAllocator::get_singleton()) {
+			stats["_frame_allocator_capacity"] = ecs::ECSFrameAllocator::get_singleton()->get_capacity();
+			stats["_frame_allocator_used"] = ecs::ECSFrameAllocator::get_singleton()->get_used();
+		}
 	}
 	return stats;
 }
@@ -126,8 +132,12 @@ void ECSScheduler::validate_simulation_integrity() const {
 	// Step 4 Safety: Detect write conflicts and potential race conditions
 	uint64_t combined_writes = 0;
 	List<Callable> systems;
-	for (int i = 0; i < process_systems.size(); i++) systems.push_back(process_systems[i]);
-	for (int i = 0; i < physics_process_systems.size(); i++) systems.push_back(physics_process_systems[i]);
+	for (int i = 0; i < process_systems.size(); i++) {
+		systems.push_back(process_systems[i]);
+	}
+	for (int i = 0; i < physics_process_systems.size(); i++) {
+		systems.push_back(physics_process_systems[i]);
+	}
 
 	for (const Callable &E : systems) {
 		if (system_info.has(E)) {
@@ -145,11 +155,17 @@ ECSScheduler::ECSScheduler() {
 	set_process(true);
 	set_physics_process(true);
 
+	octree = memnew(ecs::NativeOctree);
+
 	// Natively parallelized and dispatched in _notification to avoid Callable overhead.
 	// Generic systems can still be registered via Callable for flexibility.
 }
 
 ECSScheduler::~ECSScheduler() {
+	if (octree) {
+		memdelete(octree);
+		octree = nullptr;
+	}
 	if (singleton == this) {
 		singleton = nullptr;
 	}
@@ -216,7 +232,7 @@ void ECSScheduler::_notification(int p_what) {
 		}
 		if (ShaderDataSystem::get_singleton()) {
 			t_now = OS::get_singleton()->get_ticks_usec();
-			ShaderDataSystem::get_singleton()->update_horrror_params();
+			ShaderDataSystem::get_singleton()->update_horror_params();
 			system_timings["ShaderDataSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
 		}
 
