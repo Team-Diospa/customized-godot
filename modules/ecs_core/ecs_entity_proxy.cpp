@@ -24,15 +24,26 @@ bool ECSEntityProxy::_set(const StringName &p_name, const Variant &p_value) {
 
 	String name = p_name;
 	if (name.contains("/")) {
-		String comp_name = name.get_slice("/", 0) + "Component";
+		String base_name = name.get_slice("/", 0);
+		String comp_name = base_name + "Component";
 		String prop_name = name.get_slice("/", 1);
 
-		if (em->get_registry_untyped(comp_name) && em->get_registry_untyped(comp_name)->has(entity_id)) {
-			Variant data = em->get_registry_untyped(comp_name)->get_untyped(entity_id);
+		ISparseSet *set = em->get_registry_untyped(comp_name);
+		if (set && set->has(entity_id)) {
+			// Titanium-Certified: Check if it's a Dictionary-based component
+			Variant data = set->get_untyped(entity_id);
 			if (data.get_type() == Variant::DICTIONARY) {
 				Dictionary d = data;
 				d[prop_name] = p_value;
 				em->update_component_untyped(entity_id, comp_name, d);
+				return true;
+			} else if (base_name == "Transform") {
+				// Direct field access for raw structs
+				TransformComponent tc = em->get_component<TransformComponent>(entity_id);
+				if (prop_name == "x") { tc.x = p_value; }
+				else if (prop_name == "y") { tc.y = p_value; }
+				else if (prop_name == "z") { tc.z = p_value; }
+				em->add_component(entity_id, tc);
 				return true;
 			}
 		}
@@ -130,6 +141,20 @@ void ECSEntityProxy::_get_property_list(List<PropertyInfo> *p_list) const {
 		p_list->push_back(PropertyInfo(Variant::NIL, "Animation", PROPERTY_HINT_NONE, "Animation/", PROPERTY_USAGE_GROUP));
 		p_list->push_back(PropertyInfo(Variant::FLOAT, "Animation/fps"));
 		p_list->push_back(PropertyInfo(Variant::INT, "Animation/current_frame"));
+	}
+
+	// Group: NavigationAgent3D (Phase 3 Hook)
+	if (em->has_component<NavigationAgent3DComponent>(entity_id)) {
+		p_list->push_back(PropertyInfo(Variant::NIL, "Navigation", PROPERTY_HINT_NONE, "Navigation/", PROPERTY_USAGE_GROUP));
+		p_list->push_back(PropertyInfo(Variant::FLOAT, "Navigation/radius"));
+		p_list->push_back(PropertyInfo(Variant::FLOAT, "Navigation/max_speed"));
+	}
+
+	// Group: Telemetry (Phase 4 Step 2)
+	if (em->has_component<ECSTelemetryComponent>(entity_id)) {
+		p_list->push_back(PropertyInfo(Variant::NIL, "Telemetry", PROPERTY_HINT_NONE, "Telemetry/", PROPERTY_USAGE_GROUP));
+		p_list->push_back(PropertyInfo(Variant::FLOAT, "Telemetry/last_execution_time", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY));
+		p_list->push_back(PropertyInfo(Variant::INT, "Telemetry/frame_id", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY));
 	}
 }
 

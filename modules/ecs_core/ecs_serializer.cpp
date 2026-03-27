@@ -33,6 +33,7 @@
 #include "entity_manager.h"
 
 #include "core/io/file_access.h"
+#include "core/io/marshalls.h"
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
 
@@ -42,6 +43,10 @@ void ECSSerializer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("save_world", "path"), &ECSSerializer::save_world);
 	ClassDB::bind_method(D_METHOD("save_delta", "path", "baseline"), &ECSSerializer::save_delta);
 	ClassDB::bind_method(D_METHOD("load_world", "path"), &ECSSerializer::load_world);
+	
+	ClassDB::bind_method(D_METHOD("capture_snapshot"), &ECSSerializer::capture_snapshot);
+	ClassDB::bind_method(D_METHOD("capture_snapshot_binary"), &ECSSerializer::capture_snapshot_binary);
+	ClassDB::bind_method(D_METHOD("apply_snapshot_delta", "delta"), &ECSSerializer::apply_snapshot_delta);
 }
 
 ECSSerializer::ECSSerializer() {
@@ -231,4 +236,71 @@ int ECSSerializer::load_world(const String &p_path) {
 	}
 
 	return 0; // OK
+}
+Dictionary ECSSerializer::capture_snapshot() {
+	EntityManager *em = EntityManager::get_singleton();
+	Dictionary snapshot;
+	if (!em) {
+		return snapshot;
+	}
+
+	auto capture_block = [&](const StringName &p_name) {
+		ISparseSet *set = em->get_registry_untyped(p_name);
+		if (set) {
+			Dictionary ents;
+			const Vector<uint64_t> &entities = set->get_dense_raw();
+			for (int i = 0; i < entities.size(); i++) {
+				ents[entities[i]] = set->get_untyped(entities[i]);
+			}
+			snapshot[p_name] = ents;
+		}
+	};
+
+	capture_block("TransformComponent");
+	capture_block("Transform2DComponent");
+	capture_block("AudioComponent");
+
+	return snapshot;
+}
+
+PackedByteArray ECSSerializer::capture_snapshot_binary() {
+	Dictionary snapshot = capture_snapshot();
+	int len;
+	encode_variant(snapshot, nullptr, len, false);
+	PackedByteArray pba;
+	pba.resize(len);
+	encode_variant(snapshot, pba.ptrw(), len, false);
+	return pba;
+}
+
+int ECSSerializer::apply_snapshot_delta(const PackedByteArray &p_delta) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em || p_delta.size() == 0) {
+		return ERR_INVALID_PARAMETER;
+	}
+
+	// For Phase 4 Step 1, we use Variant-based delta application for flexibility.
+	// Optimization to raw bitstreams is slated for Step 4 Hardening.
+	Variant v;
+	Callable::CallError ce;
+	Error err = decode_variant(v, p_delta.ptr(), p_delta.size(), nullptr, false);
+	if (err != OK || v.get_type() != Variant::DICTIONARY) {
+		return ERR_FILE_CORRUPT;
+	}
+
+	Dictionary delta = v;
+	Array keys = delta.keys();
+	for (int i = 0; i < keys.size(); i++) {
+		StringName comp_name = keys[i];
+		Dictionary ents = delta[comp_name];
+		Array e_ids = ents.keys();
+		for (int j = 0; j < e_ids.size(); j++) {
+			uint64_t entity = e_ids[j];
+			if (em->is_entity_valid(entity)) {
+				em->update_component_untyped(entity, comp_name, ents[entity]);
+			}
+		}
+	}
+
+	return OK;
 }

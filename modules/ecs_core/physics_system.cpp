@@ -47,25 +47,18 @@ PhysicsSystem *PhysicsSystem::get_singleton() {
 
 void PhysicsSystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("process_physics_updates"), &PhysicsSystem::process_physics_updates);
+	ClassDB::bind_method(D_METHOD("register_entity_physics", "entity", "shape", "space", "mode"), &PhysicsSystem::register_entity_physics, DEFVAL(0));
 }
 
 PhysicsSystem::PhysicsSystem() {
 	singleton = this;
-	physics_bodies.resize(10000);
-
+	
 	EntityManager *em = EntityManager::get_singleton();
 	if (em) {
-		SparseSet<TransformComponent> *transforms = em->get_transforms();
-		if (transforms) {
-			transforms->register_on_removed(callable_mp(this, &PhysicsSystem::_on_transform_removed));
+		SparseSet<PhysicsBody3DComponent> *bodies = em->get_physics_bodies_3d();
+		if (bodies) {
+			bodies->register_on_removed(callable_mp(this, &PhysicsSystem::_on_physics_component_removed));
 		}
-	}
-}
-
-void PhysicsSystem::_on_transform_removed(uint64_t p_entity) {
-	uint32_t index = EntityManager::get_entity_index(p_entity);
-	if (index < (uint32_t)physics_bodies.size()) {
-		unregister_entity_physics(index);
 	}
 }
 
@@ -73,104 +66,119 @@ PhysicsSystem::~PhysicsSystem() {
 	if (singleton == this) {
 		singleton = nullptr;
 	}
-
-	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
-	if (ps) {
-		for (int i = 0; i < physics_bodies.size(); i++) {
-			if (physics_bodies[i].is_valid()) {
-				ps->free_rid(physics_bodies[i]);
-			}
-		}
-	}
 }
 
-void PhysicsSystem::register_entity_physics(int p_entity_id, RID p_shape, RID p_space) {
-	if (p_entity_id < 0) {
+void PhysicsSystem::register_entity_physics(uint64_t p_entity, RID p_shape, RID p_space, int p_mode) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em) return;
+
+	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+	RID new_body = ps->body_create();
+	ps->body_set_mode(new_body, (PhysicsServer3D::BodyMode)p_mode);
+	ps->body_add_shape(new_body, p_shape);
+	ps->body_set_space(new_body, p_space);
+
+	PhysicsBody3DComponent comp(new_body, p_mode);
+	em->add_component<PhysicsBody3DComponent>(p_entity, comp);
+}
+
+void PhysicsSystem::unregister_entity_physics(uint64_t p_entity) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em || !em->has_component<PhysicsBody3DComponent>(p_entity)) {
 		return;
 	}
 
-	if (p_entity_id >= physics_bodies.size()) {
-		int old_size = physics_bodies.size();
-		physics_bodies.resize(p_entity_id + 1024); // Grow in chunks
-		for (int i = old_size; i < physics_bodies.size(); i++) {
-			physics_bodies.write[i] = RID();
-		}
+	PhysicsBody3DComponent &comp = em->get_component<PhysicsBody3DComponent>(p_entity);
+	if (comp.body.is_valid()) {
+		PhysicsServer3D::get_singleton()->free_rid(comp.body);
 	}
-
-	RID new_body = PhysicsServer3D::get_singleton()->body_create();
-	PhysicsServer3D::get_singleton()->body_set_mode(new_body, PhysicsServer3D::BODY_MODE_KINEMATIC);
-	PhysicsServer3D::get_singleton()->body_add_shape(new_body, p_shape);
-	PhysicsServer3D::get_singleton()->body_set_space(new_body, p_space);
-
-	physics_bodies.write[p_entity_id] = new_body;
-}
-
-void PhysicsSystem::unregister_entity_physics(int p_entity_id) {
-	if (p_entity_id >= 0 && p_entity_id < physics_bodies.size()) {
-		RID instance = physics_bodies[p_entity_id];
-		if (instance.is_valid()) {
-			PhysicsServer3D::get_singleton()->free_rid(instance);
-		}
-		physics_bodies.write[p_entity_id] = RID();
-	}
+	em->remove_component_untyped(p_entity, "PhysicsBody3DComponent");
 }
 
 void PhysicsSystem::process_physics_updates() {
 	EntityManager *em = EntityManager::get_singleton();
-	if (!em) {
-		return;
-	}
+	if (!em) return;
 
 	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
-	if (!worlds) {
-		return;
+	SparseSet<PhysicsBody3DComponent> *bodies = em->get_physics_bodies_3d();
+	if (!worlds || !bodies) return;
+
+	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+	const Vector<uint64_t> &entities = bodies->get_dense_raw();
+
+	for (int i = 0; i < entities.size(); i++) {
+		uint64_t entity = entities[i];
+		if (!worlds->has(entity)) continue;
+
+		const PhysicsBody3DComponent &b = bodies->get(entity);
+		const WorldTransformComponent &wt = worlds->get(entity);
+
+		Transform3D xform;
+		xform.origin = Vector3(wt.x, wt.y, wt.z);
+		xform.basis = Basis::from_euler(Vector3(wt.rot_x, wt.rot_y, wt.rot_z));
+
+		// Push to server
+		ps->body_set_state(b.body, PhysicsServer3D::BODY_STATE_TRANSFORM, xform);
 	}
-	int limit = worlds->size();
+}
 
-	const Vector<uint64_t> &entities = worlds->get_dense_raw();
+void PhysicsSystem::_on_physics_component_removed(uint64_t p_entity) {
+	EntityManager *em = EntityManager::get_singleton();
+	if (!em) return;
 
-	for (int i = 0; i < limit; i++) {
-		uint64_t entity_id = entities[i];
-		const WorldTransformComponent &t = worlds->get(entity_id);
-
-		if (entity_id < (uint64_t)physics_bodies.size() && physics_bodies[(int)entity_id].is_valid()) {
-			Transform3D xform;
-			xform.origin = Vector3(t.x, t.y, t.z);
-			
-			// SYNC ROTATION: Convert Euler back to Basis
-			xform.basis = Basis::from_euler(Vector3(t.rot_x, t.rot_y, t.rot_z));
-			
-			PhysicsServer3D::get_singleton()->body_set_state(physics_bodies[(int)entity_id], PhysicsServer3D::BODY_STATE_TRANSFORM, xform);
+	SparseSet<PhysicsBody3DComponent> *bodies = em->get_physics_bodies_3d();
+	if (bodies && bodies->has(p_entity)) {
+		PhysicsBody3DComponent &comp = bodies->get(p_entity);
+		if (comp.body.is_valid()) {
+			PhysicsServer3D::get_singleton()->free_rid(comp.body);
+			comp.body = RID();
 		}
 	}
 }
 
-void PhysicsSystem::solve_kinematic_movement_3d(uint64_t p_entity, Vector3 p_velocity) {
-	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+void PhysicsSystem::solve_kinematic_movement_3d(uint64_t p_entity, Vector3 p_velocity, float p_delta) {
 	EntityManager *em = EntityManager::get_singleton();
-
-	if (!em->has_component<TransformComponent>(p_entity)) {
+	if (!em || !em->has_component<PhysicsBody3DComponent>(p_entity)) {
 		return;
 	}
-	TransformComponent &t = em->get_component<TransformComponent>(p_entity);
+
+	PhysicsBody3DComponent &b = em->get_component<PhysicsBody3DComponent>(p_entity);
+	WorldTransformComponent &wt = em->get_component<WorldTransformComponent>(p_entity);
+
+	Vector3 motion = p_velocity * p_delta;
 
 	Transform3D xform;
-	xform.origin = Vector3(t.x, t.y, t.z);
+	xform.origin = Vector3(wt.x, wt.y, wt.z);
+	xform.basis = Basis::from_euler(Vector3(wt.rot_x, wt.rot_y, wt.rot_z));
 
-	PhysicsServer3D::MotionParameters params(xform, p_velocity);
+	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+	PhysicsServer3D::MotionParameters params(xform, motion);
 	PhysicsServer3D::MotionResult result;
 
-	if (ps->body_test_motion(RID(), params, &result)) {
-		Vector3 remainder = result.remainder;
-		Vector3 normal = result.collision_normal;
-		Vector3 slide = remainder.slide(normal);
+	if (ps->body_test_motion(b.body, params, &result)) {
+		wt.x += result.travel.x;
+		wt.y += result.travel.y;
+		wt.z += result.travel.z;
 
-		t.x += result.travel.x + slide.x;
-		t.y += result.travel.y + slide.y;
-		t.z += result.travel.z + slide.z;
+		// Basic slide
+		Vector3 remainder = result.remainder;
+		Vector3 slide = remainder.slide(result.collision_normal);
+		
+		wt.x += slide.x;
+		wt.y += slide.y;
+		wt.z += slide.z;
+		
+		if (em->has_component<KinematicController3DComponent>(p_entity)) {
+			KinematicController3DComponent &k = em->get_component<KinematicController3DComponent>(p_entity);
+			k.is_on_floor = result.collision_normal.y > 0.5f;
+		}
 	} else {
-		t.x += p_velocity.x;
-		t.y += p_velocity.y;
-		t.z += p_velocity.z;
+		wt.x += motion.x;
+		wt.y += motion.y;
+		wt.z += motion.z;
+		if (em->has_component<KinematicController3DComponent>(p_entity)) {
+			KinematicController3DComponent &k = em->get_component<KinematicController3DComponent>(p_entity);
+			k.is_on_floor = false;
+		}
 	}
 }

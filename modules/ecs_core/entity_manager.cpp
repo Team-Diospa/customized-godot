@@ -71,6 +71,12 @@ EntityManager::EntityManager() {
 	register_component_type<AnimationComponent>("AnimationComponent", BIT_ANIMATION);
 	register_component_type<ShaderDataComponent>("ShaderDataComponent", BIT_SHADER_DATA);
 	register_component_type<DebugComponent>("DebugComponent", BIT_DEBUG);
+	register_component_type<PhysicsBody3DComponent>("PhysicsBody3DComponent", BIT_PHYSICS_3D);
+	register_component_type<KinematicController3DComponent>("KinematicController3DComponent", BIT_KINEMATIC_3D);
+	register_component_type<ECSSkeletonBridgeComponent>("ECSSkeletonBridgeComponent", BIT_SKELETON_BRIDGE);
+	register_component_type<BoneBufferComponent>("BoneBufferComponent", BIT_BONE_BUFFER);
+	register_component_type<AudioVoiceComponent>("AudioVoiceComponent", BIT_AUDIO_VOICE);
+	register_component_type<NavigationAgent3DComponent>("NavigationAgent3DComponent", BIT_NAVIGATION_3D);
 }
 
 EntityManager::~EntityManager() {

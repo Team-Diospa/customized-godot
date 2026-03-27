@@ -47,6 +47,7 @@
 #include "rendering_system_2d.h"
 #include "shader_data_system.h"
 #include "octree_system.h"
+#include "navigation_system.h"
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
@@ -69,6 +70,7 @@ static AudioSystem *ptr_audio_system = nullptr;
 static InputBufferSystem *ptr_input_buffer_system = nullptr;
 static AnimationSystem *ptr_animation_system = nullptr;
 static ShaderDataSystem *ptr_shader_data_system = nullptr;
+static NavigationSystem *ptr_navigation_system = nullptr;
 
 void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -90,6 +92,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ClassDB::register_class<InputBufferSystem>();
 	ClassDB::register_class<AnimationSystem>();
 	ClassDB::register_class<ShaderDataSystem>();
+	ClassDB::register_class<NavigationSystem>();
 	ClassDB::register_class<ECSEntityProxy>();
 
 	ptr_entity_manager = memnew(EntityManager);
@@ -105,6 +108,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ptr_input_buffer_system = memnew(InputBufferSystem);
 	ptr_animation_system = memnew(AnimationSystem);
 	ptr_shader_data_system = memnew(ShaderDataSystem);
+	ptr_navigation_system = memnew(NavigationSystem);
 
 	// Singletons depend on correct load order
 	ptr_ecs_scheduler = memnew(ECSScheduler);
@@ -124,6 +128,7 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("InputBufferSystem", (Object *)InputBufferSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("AnimationSystem", (Object *)AnimationSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ShaderDataSystem", (Object *)ShaderDataSystem::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationSystem", (Object *)NavigationSystem::get_singleton()));
 
 	ptr_ecs_frame_allocator = memnew(ecs::ECSFrameAllocator);
 	ptr_ecs_frame_allocator->initialize(1024 * 1024 * 4); // 4MB Buffer
@@ -166,6 +171,10 @@ void uninitialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	if (ptr_shader_data_system) {
 		memdelete(ptr_shader_data_system);
 		ptr_shader_data_system = nullptr;
+	}
+	if (ptr_navigation_system) {
+		memdelete(ptr_navigation_system);
+		ptr_navigation_system = nullptr;
 	}
 	if (ptr_ecs_serializer) {
 		memdelete(ptr_ecs_serializer);

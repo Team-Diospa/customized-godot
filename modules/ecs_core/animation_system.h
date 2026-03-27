@@ -48,6 +48,7 @@ public:
 	static AnimationSystem *get_singleton();
 
 	void process_animation_updates(float p_delta);
+	void process_skeletal_updates();
 
 	AnimationSystem();
 	~AnimationSystem();

@@ -33,6 +33,7 @@
 #include "core/object/object.h"
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
+#include <cstdint>
 #include "core/variant/callable.h"
 #include "core/templates/hash_set.h"
 #include "core/variant/dictionary.h"
@@ -46,8 +47,15 @@ class ECSScheduler : public Node {
 private:
 	static ECSScheduler *singleton;
 
+	struct SystemInfo {
+		uint64_t last_usec = 0;
+		uint64_t read_mask = 0;
+		uint64_t write_mask = 0;
+	};
+
 	Vector<Callable> process_systems;
 	Vector<Callable> physics_process_systems;
+	HashMap<Callable, SystemInfo> system_info;
 	HashSet<Callable> disabled_systems;
 	Dictionary system_timings;
 
@@ -71,11 +79,14 @@ public:
 	// The open extension loop registering specific generic callbacks gracefully
 	void register_process_system(const Callable &p_system);
 	void register_physics_system(const Callable &p_system);
+	void register_system_dependency(const Callable &p_system, uint64_t p_read_mask, uint64_t p_write_mask);
 	void set_system_enabled(const Callable &p_system, bool p_enabled);
 	bool is_system_enabled(const Callable &p_system) const;
 
 	uint64_t get_last_frame_usec() const;
 	Dictionary get_system_timings() const;
+	Dictionary get_detailed_stats() const; // New: Step 2 Hardware Telemetry
+	void validate_simulation_integrity(); // New: Step 4 Safety
 	void dump_performance_stats();
 
 	ECSScheduler();

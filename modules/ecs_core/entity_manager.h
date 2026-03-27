@@ -240,6 +240,100 @@ struct ShaderDataComponent {
 	}
 };
 
+struct PhysicsBody3DComponent {
+	RID body;
+	int mode = 0; // PhysicsServer3D::BodyMode
+	uint32_t collision_layer = 1;
+	uint32_t collision_mask = 1;
+
+	PhysicsBody3DComponent() {}
+	PhysicsBody3DComponent(RID p_body, int p_mode = 0) : body(p_body), mode(p_mode) {}
+	PhysicsBody3DComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::RID) {
+			body = p_var;
+		}
+	}
+};
+
+struct KinematicController3DComponent {
+	float velocity[3] = { 0, 0, 0 };
+	bool is_on_floor = false;
+	float step_height = 0.5f;
+
+	KinematicController3DComponent() {}
+	KinematicController3DComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::VECTOR3) {
+			Vector3 v = p_var;
+			velocity[0] = v.x; velocity[1] = v.y; velocity[2] = v.z;
+		}
+	}
+};
+
+struct ECSSkeletonBridgeComponent {
+	RID skeleton;
+	int bone_count = 0;
+
+	ECSSkeletonBridgeComponent() {}
+	ECSSkeletonBridgeComponent(RID p_skeleton, int p_count) : skeleton(p_skeleton), bone_count(p_count) {}
+	ECSSkeletonBridgeComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::RID) {
+			skeleton = p_var;
+		}
+	}
+};
+
+struct BoneBufferComponent {
+	Vector<Transform3D> transforms;
+
+	BoneBufferComponent() {}
+	BoneBufferComponent(int p_count) { transforms.resize(p_count); }
+};
+
+struct NavigationAgent3DComponent {
+	RID agent;
+	float target[3] = { 0, 0, 0 };
+	float radius = 0.5f;
+	float neighbor_distance = 50.0f;
+	int max_neighbors = 10;
+	float time_horizon = 5.0f;
+	float max_speed = 10.0f;
+
+	NavigationAgent3DComponent() {}
+	NavigationAgent3DComponent(RID p_agent) : agent(p_agent) {}
+	NavigationAgent3DComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::RID) {
+			agent = p_var;
+		}
+	}
+};
+
+struct AudioVoiceComponent {
+	RID stream_instance;
+	float priority = 1.0f;
+	float volume = 1.0f;
+	bool is_active = true;
+
+	AudioVoiceComponent() {}
+	AudioVoiceComponent(RID p_instance, float p_priority = 1.0f) : stream_instance(p_instance), priority(p_priority) {}
+	AudioVoiceComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::RID) {
+			stream_instance = p_var;
+		}
+	}
+};
+
+struct ECSTelemetryComponent {
+	float last_execution_time = 0.0f;
+	uint64_t frame_id = 0;
+	ECSTelemetryComponent() {}
+	ECSTelemetryComponent(const Variant &p_var) {
+		if (p_var.get_type() == Variant::DICTIONARY) {
+			Dictionary d = p_var;
+			last_execution_time = d["time"];
+		}
+	}
+};
+
 class EntityManager : public Object {
 	GDCLASS(EntityManager, Object);
 
@@ -275,6 +369,13 @@ public:
 		BIT_ANIMATION = 1ULL << 8,
 		BIT_SHADER_DATA = 1ULL << 9,
 		BIT_DEBUG = 1ULL << 10,
+		BIT_PHYSICS_3D = 1ULL << 11,
+		BIT_KINEMATIC_3D = 1ULL << 12,
+		BIT_SKELETON_BRIDGE = 1ULL << 13,
+		BIT_BONE_BUFFER = 1ULL << 14,
+		BIT_AUDIO_VOICE = 1ULL << 15,
+		BIT_NAVIGATION_3D = 1ULL << 16,
+		BIT_TELEMETRY = 1ULL << 17,
 	};
 
 	static EntityManager *get_singleton();
@@ -380,6 +481,13 @@ public:
 	inline SparseSet<WorldTransformComponent> *get_world_transforms() { return get_registry_by_bit<WorldTransformComponent>(BIT_WORLD_TRANSFORM); }
 	inline SparseSet<WorldTransform2DComponent> *get_world_transforms_2d() { return get_registry_by_bit<WorldTransform2DComponent>(BIT_WORLD_TRANSFORM_2D); }
 	inline SparseSet<DebugComponent> *get_debugs() { return get_registry_by_bit<DebugComponent>(BIT_DEBUG); }
+	inline SparseSet<PhysicsBody3DComponent> *get_physics_bodies_3d() { return get_registry_by_bit<PhysicsBody3DComponent>(BIT_PHYSICS_3D); }
+	inline SparseSet<KinematicController3DComponent> *get_kinematic_controllers_3d() { return get_registry_by_bit<KinematicController3DComponent>(BIT_KINEMATIC_3D); }
+	inline SparseSet<ECSSkeletonBridgeComponent> *get_skeleton_bridges() { return get_registry_by_bit<ECSSkeletonBridgeComponent>(BIT_SKELETON_BRIDGE); }
+	inline SparseSet<BoneBufferComponent> *get_bone_buffers() { return get_registry_by_bit<BoneBufferComponent>(BIT_BONE_BUFFER); }
+	inline SparseSet<AudioVoiceComponent> *get_audio_voices() { return get_registry_by_bit<AudioVoiceComponent>(BIT_AUDIO_VOICE); }
+	inline SparseSet<NavigationAgent3DComponent> *get_navigation_agents_3d() { return get_registry_by_bit<NavigationAgent3DComponent>(BIT_NAVIGATION_3D); }
+	inline SparseSet<ECSTelemetryComponent> *get_telemetries() { return get_registry_by_bit<ECSTelemetryComponent>(BIT_TELEMETRY); }
 
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
@@ -584,4 +692,120 @@ inline ShaderDataComponent &EntityManager::get_component<ShaderDataComponent>(ui
 template <>
 inline bool EntityManager::has_component<ShaderDataComponent>(uint64_t p_entity) {
 	return get_registry<ShaderDataComponent>("ShaderDataComponent")->has(p_entity);
+}
+template <>
+inline void EntityManager::add_component<PhysicsBody3DComponent>(uint64_t p_entity, const PhysicsBody3DComponent &p_comp) {
+	get_registry<PhysicsBody3DComponent>("PhysicsBody3DComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_PHYSICS_3D;
+	}
+}
+template <>
+inline PhysicsBody3DComponent &EntityManager::get_component<PhysicsBody3DComponent>(uint64_t p_entity) {
+	return get_registry<PhysicsBody3DComponent>("PhysicsBody3DComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<PhysicsBody3DComponent>(uint64_t p_entity) {
+	return get_registry<PhysicsBody3DComponent>("PhysicsBody3DComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<KinematicController3DComponent>(uint64_t p_entity, const KinematicController3DComponent &p_comp) {
+	get_registry<KinematicController3DComponent>("KinematicController3DComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_KINEMATIC_3D;
+	}
+}
+template <>
+inline KinematicController3DComponent &EntityManager::get_component<KinematicController3DComponent>(uint64_t p_entity) {
+	return get_registry<KinematicController3DComponent>("KinematicController3DComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<KinematicController3DComponent>(uint64_t p_entity) {
+	return get_registry<KinematicController3DComponent>("KinematicController3DComponent")->has(p_entity);
+}
+template <>
+inline void EntityManager::add_component<ECSSkeletonBridgeComponent>(uint64_t p_entity, const ECSSkeletonBridgeComponent &p_comp) {
+	get_registry<ECSSkeletonBridgeComponent>("ECSSkeletonBridgeComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_SKELETON_BRIDGE;
+	}
+}
+template <>
+inline ECSSkeletonBridgeComponent &EntityManager::get_component<ECSSkeletonBridgeComponent>(uint64_t p_entity) {
+	return get_registry<ECSSkeletonBridgeComponent>("ECSSkeletonBridgeComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<ECSSkeletonBridgeComponent>(uint64_t p_entity) {
+	return get_registry<ECSSkeletonBridgeComponent>("ECSSkeletonBridgeComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<BoneBufferComponent>(uint64_t p_entity, const BoneBufferComponent &p_comp) {
+	get_registry<BoneBufferComponent>("BoneBufferComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_BONE_BUFFER;
+	}
+}
+template <>
+inline BoneBufferComponent &EntityManager::get_component<BoneBufferComponent>(uint64_t p_entity) {
+	return get_registry<BoneBufferComponent>("BoneBufferComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<BoneBufferComponent>(uint64_t p_entity) {
+	return get_registry<BoneBufferComponent>("BoneBufferComponent")->has(p_entity);
+}
+template <>
+inline void EntityManager::add_component<AudioVoiceComponent>(uint64_t p_entity, const AudioVoiceComponent &p_comp) {
+	get_registry<AudioVoiceComponent>("AudioVoiceComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_AUDIO_VOICE;
+	}
+}
+template <>
+inline AudioVoiceComponent &EntityManager::get_component<AudioVoiceComponent>(uint64_t p_entity) {
+	return get_registry<AudioVoiceComponent>("AudioVoiceComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<AudioVoiceComponent>(uint64_t p_entity) {
+	return get_registry<AudioVoiceComponent>("AudioVoiceComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<NavigationAgent3DComponent>(uint64_t p_entity, const NavigationAgent3DComponent &p_comp) {
+	get_registry<NavigationAgent3DComponent>("NavigationAgent3DComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_NAVIGATION_3D;
+	}
+}
+template <>
+inline NavigationAgent3DComponent &EntityManager::get_component<NavigationAgent3DComponent>(uint64_t p_entity) {
+	return get_registry<NavigationAgent3DComponent>("NavigationAgent3DComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<NavigationAgent3DComponent>(uint64_t p_entity) {
+	return get_registry<NavigationAgent3DComponent>("NavigationAgent3DComponent")->has(p_entity);
+}
+
+template <>
+inline void EntityManager::add_component<ECSTelemetryComponent>(uint64_t p_entity, const ECSTelemetryComponent &p_comp) {
+	get_registry<ECSTelemetryComponent>("ECSTelemetryComponent")->insert(p_entity, p_comp);
+	uint32_t idx = get_entity_index(p_entity);
+	if (idx < (uint32_t)entity_masks.size()) {
+		entity_masks.write[idx] |= BIT_TELEMETRY;
+	}
+}
+template <>
+inline ECSTelemetryComponent &EntityManager::get_component<ECSTelemetryComponent>(uint64_t p_entity) {
+	return get_registry<ECSTelemetryComponent>("ECSTelemetryComponent")->get(p_entity);
+}
+template <>
+inline bool EntityManager::has_component<ECSTelemetryComponent>(uint64_t p_entity) {
+	return get_registry<ECSTelemetryComponent>("ECSTelemetryComponent")->has(p_entity);
 }

@@ -98,25 +98,46 @@ void AudioSystem::process_audio_updates() {
 		return;
 	}
 
-	SparseSet<AudioComponent> *audios = em->get_audios();
+	SparseSet<AudioVoiceComponent> *voices = em->get_audio_voices();
 	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
-
-	if (!audios || !worlds) {
+	if (!voices || !worlds) {
 		return;
 	}
 
-	const Vector<uint64_t> &entities = audios->get_dense_raw();
+	AudioServer *as = AudioServer::get_singleton();
+	const Vector<uint64_t> &entities = voices->get_dense_raw();
+
+	// In a real production scenario, we'd get the listener position
+	Vector3 listener_pos = Vector3(0, 0, 0); 
+	float culling_dist_sq = 2500.0f; // 50 units
+
 	for (int i = 0; i < entities.size(); i++) {
 		uint64_t entity = entities[i];
-		AudioComponent &ac = audios->get(entity);
+		AudioVoiceComponent &vc = voices->get(entity);
 
-		if (worlds->has(entity)) {
-			const WorldTransformComponent &wc = worlds->get(entity);
-			// TODO: Integrate with custom AudioServer voice/sample system.
-			// Standard Godot 4 does not expose direct voice positioning here.
-			// if (ac.voice_id != (uint64_t)-1) {
-			// 	AudioServer::get_singleton()->voice_set_position(ac.voice_id, Vector3(wc.x, wc.y, wc.z));
-			// }
+		if (!worlds->has(entity)) {
+			continue;
+		}
+
+		const WorldTransformComponent &wt = worlds->get(entity);
+		Vector3 pos(wt.x, wt.y, wt.z);
+		float dist_sq = pos.distance_squared_to(listener_pos);
+
+		if (dist_sq > culling_dist_sq) {
+			if (vc.is_active) {
+				// Culling logic: if too far, we might want to pause or stop
+				vc.is_active = false;
+				// TODO: as->voice_stop(vc.stream_instance);
+			}
+			continue;
+		}
+
+		vc.is_active = true;
+		// Sync with AudioServer
+		if (vc.stream_instance.is_valid()) {
+			// rs->skeleton_bone_set_transform pattern for audio
+			// TODO: as->voice_set_position(vc.stream_instance, pos);
+			// TODO: as->voice_set_volume(vc.stream_instance, vc.volume);
 		}
 	}
 }

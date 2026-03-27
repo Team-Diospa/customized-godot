@@ -42,6 +42,7 @@
 #include "rendering_system.h"
 #include "rendering_system_2d.h"
 #include "shader_data_system.h"
+#include "navigation_system.h"
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
@@ -58,11 +59,13 @@ ECSScheduler *ECSScheduler::get_singleton() {
 
 void ECSScheduler::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_process_system", "system"), &ECSScheduler::register_process_system);
-	ClassDB::bind_method(D_METHOD("get_system_timings"), &ECSScheduler::get_system_timings);
 	ClassDB::bind_method(D_METHOD("register_physics_system", "system"), &ECSScheduler::register_physics_system);
 	ClassDB::bind_method(D_METHOD("set_system_enabled", "system", "enabled"), &ECSScheduler::set_system_enabled);
 	ClassDB::bind_method(D_METHOD("is_system_enabled", "system"), &ECSScheduler::is_system_enabled);
-	ClassDB::bind_method(D_METHOD("get_last_frame_usec"), &ECSScheduler::get_last_frame_usec);
+	ClassDB::bind_method(D_METHOD("get_system_timings"), &ECSScheduler::get_system_timings);
+	ClassDB::bind_method(D_METHOD("register_system_dependency", "system", "read_mask", "write_mask"), &ECSScheduler::register_system_dependency);
+	ClassDB::bind_method(D_METHOD("get_detailed_stats"), &ECSScheduler::get_detailed_stats);
+	ClassDB::bind_method(D_METHOD("validate_simulation_integrity"), &ECSScheduler::validate_simulation_integrity);
 }
 
 void ECSScheduler::register_process_system(const Callable &p_system) {
@@ -70,6 +73,12 @@ void ECSScheduler::register_process_system(const Callable &p_system) {
 }
 void ECSScheduler::register_physics_system(const Callable &p_system) {
 	physics_process_systems.push_back(p_system);
+}
+void ECSScheduler::register_system_dependency(const Callable &p_system, uint64_t p_read_mask, uint64_t p_write_mask) {
+	SystemInfo info;
+	info.read_mask = p_read_mask;
+	info.write_mask = p_write_mask;
+	system_info[p_system] = info;
 }
 
 void ECSScheduler::set_system_enabled(const Callable &p_system, bool p_enabled) {
@@ -92,6 +101,16 @@ Dictionary ECSScheduler::get_system_timings() const {
 	return system_timings;
 }
 
+Dictionary ECSScheduler::get_detailed_stats() const {
+	Dictionary stats = system_timings.duplicate();
+	EntityManager *em = EntityManager::get_singleton();
+	if (em) {
+		stats["_entity_count"] = em->get_active_entity_count();
+		stats["_frame_usec"] = last_frame_usec;
+	}
+	return stats;
+}
+
 void ECSScheduler::dump_performance_stats() {
 	print_line("--- ECS Performance Stats ---");
 	print_line("Last frame time: " + itos(last_frame_usec) + " usec");
@@ -101,6 +120,24 @@ void ECSScheduler::dump_performance_stats() {
 		print_line("System '" + String(key) + "': " + itos(system_timings[key]) + " usec");
 	}
 	print_line("-----------------------------");
+}
+
+void ECSScheduler::validate_simulation_integrity() const {
+	// Step 4 Safety: Detect write conflicts and potential race conditions
+	uint64_t combined_writes = 0;
+	List<Callable> systems;
+	for (int i = 0; i < process_systems.size(); i++) systems.push_back(process_systems[i]);
+	for (int i = 0; i < physics_process_systems.size(); i++) systems.push_back(physics_process_systems[i]);
+
+	for (const Callable &E : systems) {
+		if (system_info.has(E)) {
+			uint64_t writes = system_info[E].write_mask;
+			if ((combined_writes & writes) != 0) {
+				WARN_PRINT("ECS System Conflict Detected: Multiple systems writing to same components in same frame!");
+			}
+			combined_writes |= writes;
+		}
+	}
 }
 
 ECSScheduler::ECSScheduler() {
@@ -209,6 +246,9 @@ void ECSScheduler::_notification(int p_what) {
 		}
 		if (PhysicsSystem2D::get_singleton()) {
 			PhysicsSystem2D::get_singleton()->process_physics_updates();
+		}
+		if (NavigationSystem::get_singleton()) {
+			NavigationSystem::get_singleton()->process_navigation_updates(Engine::get_singleton()->get_physics_interpolation_fraction());
 		}
 
 		// 2. Generic Physics Systems (Callable Dispatch)

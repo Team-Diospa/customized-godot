@@ -52,6 +52,11 @@ public:
 	int save_delta(const String &p_path, const Dictionary &p_baseline);
 	int load_world(const String &p_path);
 
+	// High-frequency Networking API (Phase 4)
+	Dictionary capture_snapshot();
+	PackedByteArray capture_snapshot_binary();
+	int apply_snapshot_delta(const PackedByteArray &p_delta);
+
 	ECSSerializer();
 	~ECSSerializer();
 };
