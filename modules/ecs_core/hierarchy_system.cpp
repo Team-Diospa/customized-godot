@@ -132,6 +132,9 @@ void HierarchySystem::process_hierarchy_2d_updates() {
 		return;
 	}
 
+	cache_parents_2d = parents;
+	cache_worlds_2d = worlds;
+
 	if (hierarchy_2d_needs_sort) {
 		parents->sort_custom([](uint64_t e1, const Parent2DComponent &p1, uint64_t e2, const Parent2DComponent &p2) {
 			return p1.depth < p2.depth;
@@ -213,7 +216,7 @@ void HierarchySystem::process_hierarchy_2d_chunk(uint32_t p_start, uint32_t p_co
 		if (cache_worlds_2d->has(p.parent_id)) {
 			WorldTransform2DComponent &parent_world = cache_worlds_2d->get(p.parent_id);
 			WorldTransform2DComponent &my_world = cache_worlds_2d->get(entity);
-			
+
 			// Optimized 2D Translation + Rotation propagation
 			my_world.x = parent_world.x + p.local_x;
 			my_world.y = parent_world.y + p.local_y;
@@ -229,7 +232,9 @@ void HierarchySystem::set_parent(uint64_t p_child, uint64_t p_parent) {
 
 	// CIRCULAR DEPENDENCY GUARD: Traverse up to root to ensure child isn't an ancestor
 	uint64_t ancestor = p_parent;
-	while (ancestor != 0) {
+	int depth_count = 0;
+	while (ancestor != 0 && depth_count < 256) {
+		depth_count++;
 		if (ancestor == p_child) {
 			ERR_PRINT("ECS Circular dependency detected! Cannot set " + itos(p_child) + " as child of " + itos(p_parent));
 			return;
@@ -261,7 +266,9 @@ void HierarchySystem::set_parent_2d(uint64_t p_child, uint64_t p_parent) {
 
 	// CIRCULAR DEPENDENCY GUARD: Traverse up to root to ensure child isn't an ancestor (2D)
 	uint64_t ancestor = p_parent;
-	while (ancestor != 0) {
+	int depth_count = 0;
+	while (ancestor != 0 && depth_count < 256) {
+		depth_count++;
 		if (ancestor == p_child) {
 			ERR_PRINT("ECS Circular dependency (2D) detected! Cannot set " + itos(p_child) + " as child of " + itos(p_parent));
 			return;

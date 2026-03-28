@@ -113,7 +113,7 @@ void RenderingSystem::process_render_updates() {
 		return;
 	}
 
-	rs->multimesh_allocate_data(multimesh_data_rid, active_count, RenderingServer::MULTIMESH_TRANSFORM_3D, RenderingServer::MULTIMESH_CUSTOM_DATA_FLOAT);
+	rs->multimesh_allocate_data(multimesh_data_rid, active_count, RenderingServer::MULTIMESH_TRANSFORM_3D, false, true);
 
 	SparseSet<ShaderDataComponent> *shader_datas = em->get_shader_datas();
 	SparseSet<TransformComponent> *transforms = em->get_transforms();

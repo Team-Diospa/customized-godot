@@ -134,13 +134,18 @@ uint64_t ECSPrefabBridge::spawn_from_scene(Ref<PackedScene> p_scene, uint64_t p_
 		return 0;
 	}
 
-	// Start recursion from root (ID will be tracked via internal logic)
-	// For return value tracking, we might need a small modification to recursion or 
-	// just recreate root logic if return ID is critical.
-	
-	// Actually, let's just use a modified helper that returns the ID.
+	// Titanium-Certified: Explicit root tracking and instantiation safety
 	EntityManager *em = EntityManager::get_singleton();
-	uint64_t root_entity = em->create_entity(); // Re-use old flow but call helper for kids
+	if (!em) {
+		root->queue_free();
+		return 0;
+	}
+	
+	uint64_t root_entity = em->create_entity();
+	if (root_entity == 0) {
+		root->queue_free();
+		return 0;
+	}
 	
 	// Map Root Logic
 	DebugComponent dbg; dbg.label = root->get_name(); em->add_component(root_entity, dbg);

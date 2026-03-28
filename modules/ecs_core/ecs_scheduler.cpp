@@ -232,7 +232,7 @@ void ECSScheduler::_notification(int p_what) {
 		}
 		if (ShaderDataSystem::get_singleton()) {
 			t_now = OS::get_singleton()->get_ticks_usec();
-			ShaderDataSystem::get_singleton()->update_horror_params();
+			ShaderDataSystem::get_singleton()->update_horror_params(Engine::get_singleton()->get_process_step());
 			system_timings["ShaderDataSystem"] = OS::get_singleton()->get_ticks_usec() - t_now;
 		}
 

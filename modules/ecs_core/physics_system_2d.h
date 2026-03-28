@@ -64,7 +64,7 @@ public:
 	void unregister_entity_physics(int p_entity_id);
 
 	// 2D Equivalent of move_and_slide implemented natively.
-	void solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_velocity);
+	void solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_velocity, float p_delta);
 	PhysicsSystem2D();
 	~PhysicsSystem2D();
 };

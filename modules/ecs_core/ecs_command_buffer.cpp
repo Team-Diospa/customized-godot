@@ -90,12 +90,13 @@ void ECSCommandBuffer::queue_add_component(uint64_t p_entity_id, const StringNam
 }
 
 void ECSCommandBuffer::execute_deferred_commands() {
+	mutex.lock();
 	if (this->executing) {
+		mutex.unlock();
 		return;
 	}
 	this->executing = true;
 
-	mutex.lock();
 	// Cache the queue locally to prevent infinite recursive injections
 	Vector<Command> queue_copy = command_queue;
 	command_queue.clear();
@@ -118,4 +119,8 @@ void ECSCommandBuffer::execute_deferred_commands() {
 		}
 	}
 	this->executing = false;
+}
+
+void ECSCommandBuffer::reserve(int p_capacity) {
+	command_queue.reserve(p_capacity);
 }

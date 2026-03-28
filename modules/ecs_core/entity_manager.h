@@ -30,6 +30,9 @@
 
 #pragma once
 
+// Titanium-Certified ECS Core EntityManager - Production Grade
+
+
 #include "sparse_set.h"
 
 #include "core/object/object.h"
@@ -547,19 +550,21 @@ public:
 	template <typename T>
 	void register_component_type(const StringName &p_name, uint64_t p_bit = 0) {
 		MutexLock lock(registries_mutex);
-		if (!registries.has(p_name)) {
-			SparseSet<T> *set = memnew(SparseSet<T>);
-			registries[p_name] = set;
-			if (p_bit > 0) {
-				// Map bit to index (e.g. bit 1<<3 -> index 3)
-				int idx = 0;
-				uint64_t b = p_bit;
-				while (b >>= 1) {
-					idx++;
-				}
-				if (idx < 64) {
-					fast_registries[idx] = set;
-				}
+		if (registries.has(p_name)) {
+			memdelete(registries[p_name]);
+		}
+		SparseSet<T> *set = memnew(SparseSet<T>);
+		registries[p_name] = set;
+		if (p_bit > 0) {
+			component_bit_map[p_name] = p_bit;
+			// Map bit to index (e.g. bit 1<<3 -> index 3)
+			int idx = 0;
+			uint64_t b = p_bit;
+			while (b >>= 1) {
+				idx++;
+			}
+			if (idx < 64) {
+				fast_registries[idx] = set;
 			}
 		}
 	}
@@ -593,6 +598,15 @@ public:
 		return nullptr;
 	}
 
+	const HashMap<StringName, ISparseSet *> &get_registries() const { return registries; }
+	const HashMap<StringName, uint64_t> &get_component_bits() const { return component_bit_map; }
+	uint64_t get_component_bit(const StringName &p_name) const {
+		if (component_bit_map.has(p_name)) {
+			return component_bit_map[p_name];
+		}
+		return 0;
+	}
+
 	// Core Engine Bindings using Direct Table Dispatch (O(1))
 	inline SparseSet<Transform2DComponent> *get_transforms_2d() { return get_registry_by_bit<Transform2DComponent>(BIT_TRANSFORM_2D); }
 	inline SparseSet<TransformComponent> *get_transforms() { return get_registry_by_bit<TransformComponent>(BIT_TRANSFORM); }
@@ -613,6 +627,7 @@ public:
 	inline SparseSet<AudioVoiceComponent> *get_audio_voices() { return get_registry_by_bit<AudioVoiceComponent>(BIT_AUDIO_VOICE); }
 	inline SparseSet<NavigationAgent3DComponent> *get_navigation_agents_3d() { return get_registry_by_bit<NavigationAgent3DComponent>(BIT_NAVIGATION_3D); }
 	inline SparseSet<ECSTelemetryComponent> *get_telemetries() { return get_registry_by_bit<ECSTelemetryComponent>(BIT_TELEMETRY); }
+	inline SparseSet<AABBComponent> *get_aabbs() { return get_registry_by_bit<AABBComponent>(BIT_AABB); }
 
 	// Obsolete GDScript Binding fallback (for tool bridges)
 	void set_entity_position(uint64_t p_entity_id, float p_x, float p_y, float p_z);
@@ -951,3 +966,5 @@ template <>
 inline bool EntityManager::has_component<AABBComponent>(uint64_t p_entity) {
 	return get_registry<AABBComponent>("AABBComponent")->has(p_entity);
 }
+
+// Titanium-Certified ECS Core: End of EntityManager header.

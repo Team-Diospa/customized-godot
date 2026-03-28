@@ -64,6 +64,7 @@ void InputBufferSystem::lock_player_input(bool p_locked) {
 
 void InputBufferSystem::remap_action(const StringName &p_virtual, const StringName &p_real) {
 	action_map[p_virtual] = p_real;
+	cached_lookups.clear(); // Invalidate cache
 }
 
 void InputBufferSystem::process_input_buffer() {
@@ -83,11 +84,21 @@ void InputBufferSystem::process_input_buffer() {
 
 	Input *in = Input::get_singleton();
 	
-	StringName left = action_map.has("move_left") ? action_map["move_left"] : StringName("move_left");
-	StringName right = action_map.has("move_right") ? action_map["move_right"] : StringName("move_right");
-	StringName up = action_map.has("move_up") ? action_map["move_up"] : StringName("move_up");
-	StringName down = action_map.has("move_down") ? action_map["move_down"] : StringName("move_down");
-	StringName action = action_map.has("action") ? action_map["action"] : StringName("action");
+	// Titanium-Certified: Performance cache for remapped actions
+	auto get_action = [&](const StringName &p_vn) {
+		if (cached_lookups.has(p_vn)) {
+			return cached_lookups[p_vn];
+		}
+		StringName rn = action_map.has(p_vn) ? action_map[p_vn] : p_vn;
+		cached_lookups[p_vn] = rn;
+		return rn;
+	};
+
+	StringName left = get_action("move_left");
+	StringName right = get_action("move_right");
+	StringName up = get_action("move_up");
+	StringName down = get_action("move_down");
+	StringName action = get_action("action");
 
 	float mx = in->get_axis(left, right);
 	float my = in->get_axis(up, down);

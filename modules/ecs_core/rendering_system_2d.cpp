@@ -131,7 +131,7 @@ void RenderingSystem2D::process_render_updates() {
 	const Vector<uint64_t> &entities = worlds->get_dense_raw();
 	int count = entities.size();
 
-	rs->multimesh_allocate_data(multimesh, count, RenderingServer::MULTIMESH_TRANSFORM_2D, RenderingServer::MULTIMESH_CUSTOM_DATA_FLOAT);
+	rs->multimesh_allocate_data(multimesh, count, RenderingServer::MULTIMESH_TRANSFORM_2D, false, true);
 
 	for (int i = 0; i < count; i++) {
 		uint64_t entity = entities[i];

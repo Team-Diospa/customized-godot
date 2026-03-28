@@ -196,9 +196,12 @@ void EntityManager::destroy_entity(uint64_t p_entity_id) {
 	entity_masks.ptrw()[index] = 0; // Clear mask
 	free_list.push_back(index);
 
-	for (const KeyValue<StringName, ISparseSet *> &E : registries) {
-		if (E.value) {
-			E.value->remove(p_entity_id);
+	{
+		MutexLock lock(registries_mutex);
+		for (const KeyValue<StringName, ISparseSet *> &E : registries) {
+			if (E.value) {
+				E.value->remove(p_entity_id);
+			}
 		}
 	}
 

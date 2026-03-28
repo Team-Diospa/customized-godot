@@ -58,14 +58,19 @@ namespace ecs {
 
 	inline void add_3f_to_3f(const float *a, const float *b, float *out) {
 #if defined(ECS_USE_SSE)
-		// Masking out the 4th element to avoid polluting memory if pointers are packed tightly
+		// Masking out the 4th element to avoid polluting memory
 		__m128 va = _mm_loadu_ps(a);
 		__m128 vb = _mm_loadu_ps(b);
 		__m128 res = _mm_add_ps(va, vb);
-		// Manual store to 3 floats to prevent overwriting the 4th float (which might be rotation)
 		out[0] = ((float*)&res)[0];
 		out[1] = ((float*)&res)[1];
 		out[2] = ((float*)&res)[2];
+#elif defined(ECS_USE_NEON)
+		float32x4_t va = vld1q_f32(a);
+		float32x4_t vb = vld1q_f32(b);
+		float32x4_t res = vaddq_f32(va, vb);
+		vst1_f32(out, vget_low_f32(res));
+		vst1_lane_f32(out + 2, vget_high_f32(res), 0);
 #else
 		out[0] = a[0] + b[0];
 		out[1] = a[1] + b[1];

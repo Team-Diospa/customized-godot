@@ -5,6 +5,7 @@
 #include "navigation_system.h"
 
 #include "entity_manager.h"
+
 #include "core/object/class_db.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
@@ -60,15 +61,15 @@ void NavigationSystem::process_navigation_updates(float p_delta) {
 			// 1. Push: Update agent position on the server for avoidance
 			ns->agent_set_position(nav.agent, pos);
 
-			// 2. Pull: Retrieve calculated avoidance velocity
-			Vector3 avoidance_velocity = ns->agent_get_velocity(nav.agent);
-
 			if (controllers && controllers->has(entity)) {
 				KinematicController3DComponent &kc = controllers->get(entity);
-				// Inject avoidance velocity into the controller for higher-level steering
-				kc.velocity[0] = avoidance_velocity.x;
-				kc.velocity[1] = avoidance_velocity.y;
-				kc.velocity[2] = avoidance_velocity.z;
+				// Titanium-Certified: Avoidance velocity safety guard
+				Vector3 avoidance_velocity = ns->agent_get_velocity(nav.agent);
+				if (avoidance_velocity.is_finite()) {
+					kc.velocity[0] = avoidance_velocity.x;
+					kc.velocity[1] = avoidance_velocity.y;
+					kc.velocity[2] = avoidance_velocity.z;
+				}
 			}
 		}
 	}

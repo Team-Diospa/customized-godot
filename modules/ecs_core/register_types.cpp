@@ -97,6 +97,9 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	ClassDB::register_class<ECSEntityProxy>();
 	ClassDB::register_class<ECSQuery>();
 
+	ptr_ecs_frame_allocator = memnew(ecs::ECSFrameAllocator);
+	ptr_ecs_frame_allocator->initialize(1024 * 1024 * 4); // 4MB Buffer
+
 	ptr_entity_manager = memnew(EntityManager);
 	ptr_ecs_serializer = memnew(ECSSerializer);
 	ptr_prefab_bridge = memnew(ECSPrefabBridge);
@@ -132,9 +135,6 @@ void initialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ShaderDataSystem", (Object *)ShaderDataSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationSystem", (Object *)NavigationSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ECSCommandBuffer", (Object *)ECSCommandBuffer::get_singleton()));
-
-	ptr_ecs_frame_allocator = memnew(ecs::ECSFrameAllocator);
-	ptr_ecs_frame_allocator->initialize(1024 * 1024 * 4); // 4MB Buffer
 }
 
 void uninitialize_ecs_core_module(ModuleInitializationLevel p_level) {
@@ -149,10 +149,6 @@ void uninitialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	if (ptr_ecs_scheduler) {
 		memdelete(ptr_ecs_scheduler);
 		ptr_ecs_scheduler = nullptr;
-	}
-	if (ptr_ecs_frame_allocator) {
-		memdelete(ptr_ecs_frame_allocator);
-		ptr_ecs_frame_allocator = nullptr;
 	}
 
 	if (ptr_physics_system_2d) {
@@ -210,5 +206,10 @@ void uninitialize_ecs_core_module(ModuleInitializationLevel p_level) {
 	if (ptr_entity_manager) {
 		memdelete(ptr_entity_manager);
 		ptr_entity_manager = nullptr;
+	}
+	// Titanium-Certified: Delete FrameAllocator LAST as systems might use it in destructors
+	if (ptr_ecs_frame_allocator) {
+		memdelete(ptr_ecs_frame_allocator);
+		ptr_ecs_frame_allocator = nullptr;
 	}
 }

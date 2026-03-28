@@ -49,7 +49,7 @@ ShaderDataSystem::~ShaderDataSystem() {
 	}
 }
 
-void ShaderDataSystem::update_horror_params() {
+void ShaderDataSystem::update_horror_params(float p_delta) {
 	EntityManager *em = EntityManager::get_singleton();
 	if (!em) {
 		return;
@@ -61,7 +61,7 @@ void ShaderDataSystem::update_horror_params() {
 	}
 
 	static float time = 0;
-	time += 0.016f; // Placeholder delta
+	time += p_delta;
 
 	const Vector<uint64_t> &entities = shader_datas->get_dense_raw();
 	for (int i = 0; i < entities.size(); i++) {

@@ -31,7 +31,7 @@
 #include "ecs_serializer.h"
 
 #include "entity_manager.h"
-
+#include "core/templates/hash_map.h"
 #include "core/io/file_access.h"
 #include "core/io/marshalls.h"
 #include "core/object/class_db.h"
@@ -43,7 +43,7 @@ void ECSSerializer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("save_world", "path"), &ECSSerializer::save_world);
 	ClassDB::bind_method(D_METHOD("save_delta", "path", "baseline"), &ECSSerializer::save_delta);
 	ClassDB::bind_method(D_METHOD("load_world", "path"), &ECSSerializer::load_world);
-	
+
 	ClassDB::bind_method(D_METHOD("capture_snapshot"), &ECSSerializer::capture_snapshot);
 	ClassDB::bind_method(D_METHOD("capture_snapshot_binary"), &ECSSerializer::capture_snapshot_binary);
 	ClassDB::bind_method(D_METHOD("apply_snapshot_delta", "delta"), &ECSSerializer::apply_snapshot_delta);
@@ -77,36 +77,29 @@ int ECSSerializer::save_world(const String &p_path) {
 	// 2. Save Entity Masks (to know which components each entity has)
 	int entity_count = em->get_entity_count();
 	f->store_32(entity_count);
-	
-	// We need a way to iterate active entities. 
+
+	// We need a way to iterate active entities.
 	// For simplicity in barebones, we'll save all entities and their masks.
 	// (More optimized way is to save only valid ones)
-	
-	// Actually, let's just save components by type, it's cleaner.
-	
-	// 3. Save Components by Type
-	auto save_comp_block = [&](const StringName &p_name, uint64_t p_bit) {
-		ISparseSet *set = em->get_registry_untyped(p_name);
-		if (set) {
-			const Vector<uint64_t> &entities = set->get_dense_raw();
-			f->store_32(entities.size());
-			f->store_64(p_bit);
-			for (int i = 0; i < entities.size(); i++) {
-				uint64_t e = entities[i];
-				f->store_64(e);
-				f->store_var(set->get_untyped(e));
-			}
-		} else {
-			f->store_32(0);
-		}
-	};
 
-	save_comp_block("TransformComponent", EntityManager::BIT_TRANSFORM);
-	save_comp_block("Transform2DComponent", EntityManager::BIT_TRANSFORM_2D);
-	save_comp_block("ParentComponent", EntityManager::BIT_PARENTS);
-	save_comp_block("Parent2DComponent", EntityManager::BIT_PARENTS_2D);
-	save_comp_block("AudioComponent", EntityManager::BIT_AUDIO);
-	save_comp_block("AnimationComponent", EntityManager::BIT_ANIMATION);
+	// Actually, let's just save components by type, it's cleaner.
+
+	// 3. Save ALL Registered Components
+	const HashMap<StringName, ISparseSet *> &registries = em->get_registries();
+	f->store_32(registries.size());
+
+	for (const KeyValue<StringName, ISparseSet *> &E : registries) {
+		f->store_pascal_string(String(E.key));
+		ISparseSet *set = E.value;
+		const Vector<uint64_t> &entities = set->get_dense_raw();
+		f->store_32(entities.size());
+		f->store_64(em->get_component_bit(E.key));
+		for (int i = 0; i < entities.size(); i++) {
+			uint64_t e = entities[i];
+			f->store_64(e);
+			f->store_var(set->get_untyped(e));
+		}
+	}
 
 	return 0; // OK
 }
@@ -119,14 +112,14 @@ int ECSSerializer::save_delta(const String &p_path, const Dictionary &p_baseline
 	if (!em) {
 		return ERR_CANT_CREATE;
 	}
-	
+
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
 	if (f.is_null()) {
 		return ERR_FILE_CANT_OPEN;
 	}
 
 	f->store_32(0x444C5441); // "DLTA" magic number
-	
+
 	auto save_delta_block = [&](const StringName &p_name, uint64_t p_bit) {
 		ISparseSet *set = em->get_registry_untyped(p_name);
 		if (!set) {
@@ -145,9 +138,9 @@ int ECSSerializer::save_delta(const String &p_path, const Dictionary &p_baseline
 		for (int i = 0; i < entities.size(); i++) {
 			uint64_t e = entities[i];
 			Variant current_val = set->get_untyped(e);
-			
+
 			// If not in baseline or value changed, it's a delta
-			if (!baseline_comp.has(e) || (Variant)baseline_comp[e] != current_val) {
+			if (!baseline_comp.has(e) || baseline_comp.get(e, Variant()) != current_val) {
 				changed_entities.push_back(e);
 				changed_data.push_back(current_val);
 			}
@@ -161,9 +154,9 @@ int ECSSerializer::save_delta(const String &p_path, const Dictionary &p_baseline
 		}
 	};
 
-	save_delta_block("TransformComponent", EntityManager::BIT_TRANSFORM);
-	save_delta_block("Transform2DComponent", EntityManager::BIT_TRANSFORM_2D);
-	save_delta_block("AudioComponent", EntityManager::BIT_AUDIO);
+	for (const KeyValue<StringName, ISparseSet *> &E : em->get_registries()) {
+		save_delta_block(E.key, em->get_component_bit(E.key));
+	}
 
 	return 0;
 }
@@ -190,6 +183,7 @@ int ECSSerializer::load_world(const String &p_path) {
 
 	// ID Mapping: old_id -> new_id
 	HashMap<uint64_t, uint64_t> id_map;
+	uint32_t entity_count = f->get_32();
 
 	auto get_or_create_entity = [&](uint64_t p_old_id) {
 		if (id_map.has(p_old_id)) {
@@ -213,11 +207,10 @@ int ECSSerializer::load_world(const String &p_path) {
 		}
 	} else if (version == 2) {
 		// Version 2: Multi-block load
-		auto load_block = [&](const StringName &p_name) {
+		uint32_t registry_count = f->get_32();
+		for (uint32_t r = 0; r < registry_count; r++) {
+			StringName p_name = f->get_pascal_string();
 			uint32_t count = f->get_32();
-			if (count == 0) {
-				return;
-			}
 			uint64_t bit = f->get_64();
 			for (uint32_t i = 0; i < count; i++) {
 				uint64_t old_id = f->get_64();
@@ -225,14 +218,7 @@ int ECSSerializer::load_world(const String &p_path) {
 				uint64_t new_id = get_or_create_entity(old_id);
 				em->add_component_untyped(new_id, p_name, data);
 			}
-		};
-
-		load_block("TransformComponent");
-		load_block("Transform2DComponent");
-		load_block("ParentComponent");
-		load_block("Parent2DComponent");
-		load_block("AudioComponent");
-		load_block("AnimationComponent");
+		}
 	}
 
 	return 0; // OK
@@ -256,16 +242,16 @@ Dictionary ECSSerializer::capture_snapshot() {
 		}
 	};
 
-	capture_block("TransformComponent");
-	capture_block("Transform2DComponent");
-	capture_block("AudioComponent");
+	for (const KeyValue<StringName, ISparseSet *> &E : em->get_registries()) {
+		capture_block(E.key);
+	}
 
 	return snapshot;
 }
 
 PackedByteArray ECSSerializer::capture_snapshot_binary() {
 	Dictionary snapshot = capture_snapshot();
-	int len;
+	int len = 0;
 	encode_variant(snapshot, nullptr, len, false);
 	PackedByteArray pba;
 	pba.resize(len);

@@ -48,11 +48,12 @@ PhysicsSystem *PhysicsSystem::get_singleton() {
 void PhysicsSystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("process_physics_updates"), &PhysicsSystem::process_physics_updates);
 	ClassDB::bind_method(D_METHOD("register_entity_physics", "entity", "shape", "space", "mode"), &PhysicsSystem::register_entity_physics, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("solve_kinematic_movement_3d", "entity", "velocity", "delta"), &PhysicsSystem::solve_kinematic_movement_3d);
 }
 
 PhysicsSystem::PhysicsSystem() {
 	singleton = this;
-	
+
 	EntityManager *em = EntityManager::get_singleton();
 	if (em) {
 		SparseSet<PhysicsBody3DComponent> *bodies = em->get_physics_bodies_3d();
@@ -75,6 +76,15 @@ void PhysicsSystem::register_entity_physics(uint64_t p_entity, RID p_shape, RID 
 	}
 
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+
+	// Titanium-Certified: Overwrite protection to prevent RID leaks
+	if (em->has_component<PhysicsBody3DComponent>(p_entity)) {
+		PhysicsBody3DComponent &old_comp = em->get_component<PhysicsBody3DComponent>(p_entity);
+		if (old_comp.body.is_valid()) {
+			ps->free_rid(old_comp.body);
+		}
+	}
+
 	RID new_body = ps->body_create();
 	ps->body_set_mode(new_body, (PhysicsServer3D::BodyMode)p_mode);
 	ps->body_add_shape(new_body, p_shape);
@@ -173,11 +183,11 @@ void PhysicsSystem::solve_kinematic_movement_3d(uint64_t p_entity, Vector3 p_vel
 		// Basic slide
 		Vector3 remainder = result.remainder;
 		Vector3 slide = remainder.slide(result.collision_normal);
-		
+
 		wt.x += slide.x;
 		wt.y += slide.y;
 		wt.z += slide.z;
-		
+
 		if (em->has_component<KinematicController3DComponent>(p_entity)) {
 			KinematicController3DComponent &k = em->get_component<KinematicController3DComponent>(p_entity);
 			k.is_on_floor = result.collision_normal.y > 0.5f;

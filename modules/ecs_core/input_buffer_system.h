@@ -43,7 +43,8 @@ class InputBufferSystem : public Object {
 private:
 	static InputBufferSystem *singleton;
 	bool input_locked = false;
-	HashMap<StringName, StringName> action_map; // New: Virtual-to-Real action mapping
+	HashMap<StringName, StringName> action_map; 
+	HashMap<StringName, StringName> cached_lookups; // Performance cache for remapped actions
 
 protected:
 	static void _bind_methods();

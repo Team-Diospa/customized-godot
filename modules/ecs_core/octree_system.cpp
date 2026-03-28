@@ -28,6 +28,7 @@ void OctreeSystem::rebuild_octree() {
 	octree.clear();
 
 	SparseSet<WorldTransformComponent> *worlds = em->get_world_transforms();
+	SparseSet<AABBComponent> *aabbs = em->get_aabbs();
 	if (!worlds) {
 		return;
 	}
@@ -37,8 +38,16 @@ void OctreeSystem::rebuild_octree() {
 		uint64_t e = entities[i];
 		const WorldTransformComponent &wc = worlds->get(e);
 		
-		// Use a temporary 1x1x1 AABB for now, ideally this would come from a GeometryComponent
-		AABB bounds(Vector3(wc.x - 0.5f, wc.y - 0.5f, wc.z - 0.5f), Vector3(1, 1, 1));
+		AABB bounds;
+		if (aabbs && aabbs->has(e)) {
+			const AABBComponent &ac = aabbs->get(e);
+			bounds = AABB(Vector3(ac.x, ac.y, ac.z), Vector3(ac.size_x, ac.size_y, ac.size_z));
+			// Offset by world position
+			bounds.position += Vector3(wc.x, wc.y, wc.z);
+		} else {
+			// Titanium-Certified: Fallback to centered 1x1x1 AABB
+			bounds = AABB(Vector3(wc.x - 0.5f, wc.y - 0.5f, wc.z - 0.5f), Vector3(1, 1, 1));
+		}
 		octree.insert(e, bounds);
 	}
 }

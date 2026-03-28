@@ -72,16 +72,19 @@ void AnimationSystem::process_animation_updates(float p_delta) {
 		AnimationComponent &anim = animations->get(entities[i]);
 
 		anim.time_accumulator += p_delta;
-		float frame_time = 1.0f / anim.fps;
+		float frame_time = (anim.fps > 0) ? (1.0f / anim.fps) : 0.0f;
 
-		if (anim.time_accumulator >= frame_time) {
-			anim.current_frame = (anim.current_frame + 1) % anim.total_frames;
-			anim.time_accumulator -= frame_time;
+		if (frame_time > 0 && anim.time_accumulator >= frame_time) {
+			if (anim.total_frames > 0) {
+				anim.current_frame = (anim.current_frame + 1) % anim.total_frames;
+				anim.time_accumulator -= frame_time;
 
-			// Simple sprite-sheet UV calculation (uniform row)
-			// Assuming the shader expects 0.0-1.0 offsets
-			anim.uv_offset_x = (float)anim.current_frame / (float)anim.total_frames;
-			anim.uv_offset_y = 0.0f;
+				// Simple sprite-sheet UV calculation (uniform row)
+				anim.uv_offset_x = (float)anim.current_frame / (float)anim.total_frames;
+				anim.uv_offset_y = 0.0f;
+			} else {
+				anim.time_accumulator = 0;
+			}
 		}
 	}
 }

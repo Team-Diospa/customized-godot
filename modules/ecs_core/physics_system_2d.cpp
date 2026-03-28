@@ -47,7 +47,7 @@ PhysicsSystem2D *PhysicsSystem2D::get_singleton() {
 void PhysicsSystem2D::_bind_methods() {
 	// Native dispatch methods bound to ClassDB for GDScript visibility
 	ClassDB::bind_method(D_METHOD("process_physics_updates"), &PhysicsSystem2D::process_physics_updates);
-	ClassDB::bind_method(D_METHOD("solve_kinematic_movement_2d", "entity", "velocity"), &PhysicsSystem2D::solve_kinematic_movement_2d);
+	ClassDB::bind_method(D_METHOD("solve_kinematic_movement_2d", "entity", "velocity", "delta"), &PhysicsSystem2D::solve_kinematic_movement_2d);
 }
 
 PhysicsSystem2D::PhysicsSystem2D() {
@@ -137,7 +137,7 @@ void PhysicsSystem2D::process_physics_updates() {
 	}
 }
 
-void PhysicsSystem2D::solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_velocity) {
+void PhysicsSystem2D::solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_velocity, float p_delta) {
 	PhysicsServer2D *ps = PhysicsServer2D::get_singleton();
 	EntityManager *em = EntityManager::get_singleton();
 
@@ -150,10 +150,14 @@ void PhysicsSystem2D::solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_v
 	xform.set_origin(Vector2(t.x, t.y));
 	xform.set_rotation(t.rotation);
 
-	PhysicsServer2D::MotionParameters params(xform, p_velocity, 0.001);
+	EntityManager::get_entity_index(p_entity); // Ensure index is derived
+	RID body = physics_bodies[EntityManager::get_entity_index(p_entity)];
+
+	Vector2 motion = p_velocity * p_delta;
+	PhysicsServer2D::MotionParameters params(xform, motion, 0.001);
 	PhysicsServer2D::MotionResult result;
 
-	if (ps->body_test_motion(RID(), params, &result)) {
+	if (ps->body_test_motion(body, params, &result)) {
 		Vector2 remainder = result.remainder;
 		Vector2 normal = result.collision_normal;
 		Vector2 slide = remainder.slide(normal);
@@ -161,7 +165,7 @@ void PhysicsSystem2D::solve_kinematic_movement_2d(uint64_t p_entity, Vector2 p_v
 		t.x += result.travel.x + slide.x;
 		t.y += result.travel.y + slide.y;
 	} else {
-		t.x += p_velocity.x;
-		t.y += p_velocity.y;
+		t.x += motion.x;
+		t.y += motion.y;
 	}
 }

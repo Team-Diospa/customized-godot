@@ -47,6 +47,7 @@ struct OctreeNode {
 	AABB bounds;
 	int children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	Vector<uint64_t> entities;
+	Vector<AABB> entity_aabbs; // Titanium-Certified: Required for redistribution
 	bool is_leaf = true;
 };
 
@@ -107,6 +108,7 @@ private:
 				// No longer a leaf, fall through to child insertion
 			} else {
 				node.entities.push_back(p_entity);
+				node.entity_aabbs.push_back(p_aabb);
 				return;
 			}
 		}
@@ -145,11 +147,13 @@ private:
 
 		// REDISTRIBUTE: Move entities to children if they fit entirely
 		Vector<uint64_t> old_entities = parent.entities;
+		Vector<AABB> old_aabbs = parent.entity_aabbs;
 		parent.entities.clear();
-
+		parent.entity_aabbs.clear();
+		
 		for (int i = 0; i < old_entities.size(); i++) {
 			uint64_t entity = old_entities[i];
-			AABB entity_aabb = _get_entity_aabb(entity);
+			AABB entity_aabb = old_aabbs[i];
 			
 			int target_child = -1;
 			for (int j = 0; j < 8; j++) {
@@ -161,8 +165,10 @@ private:
 
 			if (target_child != -1) {
 				nodes.write[target_child].entities.push_back(entity);
+				nodes.write[target_child].entity_aabbs.push_back(entity_aabb);
 			} else {
 				parent.entities.push_back(entity); // Spans multiple children, keep in parent
+				parent.entity_aabbs.push_back(entity_aabb);
 			}
 		}
 	}

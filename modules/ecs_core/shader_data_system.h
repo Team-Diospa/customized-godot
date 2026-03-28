@@ -46,7 +46,7 @@ protected:
 public:
 	static ShaderDataSystem *get_singleton();
 
-	void update_horror_params();
+	void update_horror_params(float p_delta);
 
 	ShaderDataSystem();
 	~ShaderDataSystem();
