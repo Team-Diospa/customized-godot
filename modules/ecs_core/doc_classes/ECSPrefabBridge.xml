@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ECSPrefabBridge" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		Translation layer between Godot Scenes and ECS Entities.
+		Bridges traditional Godot [PackedScene] workflows with the ECS registry.
 	</brief_description>
 	<description>
-		[ECSPrefabBridge] parses [PackedScene] resources and translates their node hierarchies into optimized ECS entity bundles, facilitating easy spawning of complex objects.
+		[ECSPrefabBridge] is the primary tool for content creators. it allows for "Bake-at-Runtime" conversion where a standard Godot `.tscn` or `.scn` file is transformed into one or more high-performance ECS entities.
+		This bridge scans the nodes within a scene and automatically maps their properties to corresponding ECS components. For example, a [Sprite2D] node might be converted into a [Transform2DComponent] and a [TextureComponent].
+		[b]Benefits:[/b]
+		- Use the standard Godot Editor to design levels and characters.
+		- Enjoy the performance of ECS without writing binary data by hand.
+		- Support for nested hierarchies via the [HierarchySystem].
+		[b]Note:[/b] The bridge is extensible; custom components can be registered to automatically parse specific node metadata during the spawning process.
 	</description>
 	<methods>
 		<method name="spawn_from_scene">
@@ -12,7 +18,9 @@
 			<param index="0" name="scene" type="PackedScene" />
 			<param index="1" name="parent" type="int" default="0" />
 			<description>
-				Spawns an entity from a scene file and optionally attaches it to a parent entity.
+				Instantiates the provided [param scene] in memory, converts its root and all children into the ECS representation, and returns the root entity ID.
+				If [param parent] is non-zero, the new entity will be parented to that ID, inheriting its spatial transformations.
+				[b]Performance Tip:[/b] The bridge performs string-based lookup for property mapping. While optimized, avoid calling this 100+ times per frame; batch spawn entities during initialization or level transitions.
 			</description>
 		</method>
 	</methods>

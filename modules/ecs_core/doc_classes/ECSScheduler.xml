@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ECSScheduler" inherits="Node" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		Main execution heart of the ECS simulation.
+		The execution engine that drives the ECS simulation lifecycle.
 	</brief_description>
 	<description>
-		The [ECSScheduler] manages the registration and execution of simulation systems. It handles both per-frame process systems and fixed-tick physics systems.
+		[ECSScheduler] is the orchestrator responsible for executing simulation systems in a deterministic and high-performance manner. It integrates deeply with Godot's [NOTIFICATION_PROCESS] and [NOTIFICATION_PHYSICS_PROCESS] to ensure that ECS logic runs in sync with the rest of the engine.
+		The scheduler manages both [b]Native Systems[/b] (hard-coded C++ systems like Physics, Rendering, and Hierarchy) and [b]Scripting Systems[/b] (GDScript [Callable]s). It utilizes a dependency-aware execution model, allowing systems to run in parallel on the [WorkerThreadPool] if they do not share writing access to the same component types.
+		[b]Note:[/b] The order of execution is critical. Native systems generally run first to prepare the frame state, followed by user-defined systems, and finally structural cleanup via the [ECSCommandBuffer].
+		Through the [method get_detailed_stats] and [method get_system_timings] methods, developers can profile the simulation in real-time, identifying bottlenecks down to individual microsecond timings for every registered system.
 	</description>
+	<tutorials>
+		<link title="Systems &amp; Simulation Lifecycle (Handbook Vol 2)">02_Systems_Simulation.md</link>
+	</tutorials>
 	<methods>
 		<method name="register_process_system">
 			<return type="void" />
 			<param index="0" name="system" type="Callable" />
 			<description>
-				Adds a GDScript function or C++ callable to the main process loop.
+				Adds a system to the [b]Process[/b] queue. This system will be executed every frame during Godot's main idle processing. Ideal for logic that requires high-frequency visual updates (e.g., camera following, aesthetic animations).
 			</description>
 		</method>
 		<method name="register_physics_system">
 			<return type="void" />
 			<param index="0" name="system" type="Callable" />
 			<description>
-				Adds a callable to the physics-rate simulation loop.
+				Adds a system to the [b]Physics[/b] queue. This system will be executed during the fixed physics tick, ensuring deterministic results regardless of frame rate. Ideal for movement, collision handling, and AI sensors.
 			</description>
 		</method>
 		<method name="set_system_enabled">
@@ -26,13 +32,42 @@
 			<param index="0" name="system" type="Callable" />
 			<param index="1" name="enabled" type="bool" />
 			<description>
-				Enables or disables a specific system dynamically.
+				Toggles the execution state of a specific system. Disabled systems remain in the registry but are skipped during the simulation pass. This is useful for pausing specific gameplay mechanics or optimizing performance in low-activity zones.
+			</description>
+		</method>
+		<method name="is_system_enabled" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="system" type="Callable" />
+			<description>
+				Returns [code]true[/code] if the provided system is currently active in the execution queue.
+			</description>
+		</method>
+		<method name="get_system_timings" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns a collection of timing data for all registered systems. The keys are system names (or Callable descriptions) and the values are execution durations in microseconds from the last frame.
+			</description>
+		</method>
+		<method name="register_system_dependency">
+			<return type="void" />
+			<param index="0" name="system" type="Callable" />
+			<param index="1" name="read_mask" type="int" />
+			<param index="2" name="write_mask" type="int" />
+			<description>
+				Defines the "Archetype Interest" of a system.
+				The [param read_mask] and [param write_mask] are bitfields representing the component types the system accesses. The [ECSScheduler] uses this information to detect race conditions and automatically parallelize systems that operate on distinct data sets.
 			</description>
 		</method>
 		<method name="get_detailed_stats" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
-				Returns hardware telemetry and per-system timing data.
+				Returns a comprehensive telemetry report including frame budget usage, entity population spikes, and multi-thread contention metrics.
+			</description>
+		</method>
+		<method name="validate_simulation_integrity" qualifiers="const">
+			<return type="void" />
+			<description>
+				Audits the internal schedule to detect logical errors such as write-write conflicts or circular system dependencies.
 			</description>
 		</method>
 	</methods>

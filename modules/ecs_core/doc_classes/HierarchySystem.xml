@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="HierarchySystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Backend for entity structural relationships and transform inheritance.
+	</brief_description>
+	<description>
+		[HierarchySystem] is the structural backbone that implements "Parent-Child" relationships within the ECS world. While the [EntityManager] stores flat data, the [HierarchySystem] maintains the logical graph that determines how transforms are inherited.
+		It is designed for [b]SIMD-accelerated Hierarchies[/b]. When a parent moves, the system calculates the world transforms for all its descendants in a single parallel pass, using a optimized "Top-Down" sorting strategy to minimize cache misses.
+		[b]Features:[/b]
+		- [b]Depth-First Execution:[/b] Guaranteed order of updates (parents always process before children).
+		- [b]2D and 3D Support:[/b] Unified management for both spatial dimensions.
+		- [b]Hierarchy Validation:[/b] Built-in checks for circular dependencies—which are logically impossible in this data-oriented model but checked for hardening.
+		[b]Note:[/b] Creating deep hierarchies (hundreds of levels) is supported but should be used sparingly for performance optimization.
+	</description>
+	<methods>
+		<method name="set_parent">
+			<return type="void" />
+			<param index="0" name="child" type="int" />
+			<param index="1" name="parent" type="int" />
+			<description>
+				Links the [param child] entity to the [param parent]. The child will now inherit the parent's global transformation. Setting [param parent] to [code]0[/code] will detach the child, making it a root-level entity.
+			</description>
+		</method>
+		<method name="set_parent_2d">
+			<return type="void" />
+			<param index="0" name="child" type="int" />
+			<param index="1" name="parent" type="int" />
+			<description>
+				Establishes a 2D parenting relationship.
+			</description>
+		</method>
+		<method name="fix_all_depths">
+			<return type="void" />
+			<description>
+				Rescans the entire entity population to recalculate hierarchy depths. This is automatically called when entities are parented/unparented. Manual calls can be used after a massive save-game load to ensure the update graph is perfectly optimized.
+			</description>
+		</method>
+		<method name="validate_hierarchy_integrity">
+			<return type="bool" />
+			<description>
+				Deep-audits the world registry for circular parenting. Returns [code]true[/code] if the world is structurally sound.
+			</description>
+		</method>
+	</methods>
+</class>

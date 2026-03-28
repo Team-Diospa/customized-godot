@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="AudioSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		High-capacity spatial audio management for the ECS world.
+	</brief_description>
+	<description>
+		[AudioSystem] handles the complex task of spatializing and managing audio for thousands of entities. Standard [AudioStreamPlayer3D] nodes are too heavy for massive scale; instead, the [AudioSystem] pushes spatial data (position, velocity, attenuation) directly to the [AudioServer] using low-level voices.
+		This system integrates with the [OctreeSystem] to perform [b]Audio Culling[/b]. Sounds that are beyond the listener's maximum range or outside the current "Audio Frustum" are automatically silenced or de-prioritized to save CPU mixing cycles.
+		[b]Recommended Workflow:[/b]
+		Attach an [AudioComponent] to an entity to mark it as a sound emitter. The [AudioSystem] will then manage the lifecycle of the underlying audio voice.
+	</description>
+	<methods>
+		<method name="play_spatial_sound">
+			<return type="void" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="stream" type="RID" />
+			<description>
+				Triggers an immediate playback of an audio [param stream] at the entity's current world coordinates.
+				This is a "fire and forget" method for SFX like explosions or footsteps. For long-running loops, use the component-based property approach.
+			</description>
+		</method>
+		<method name="process_audio_updates">
+			<return type="void" />
+			<description>
+				Updates the world transforms and doppler-shift parameters for all active audio voices based on the latest entity transforms.
+			</description>
+		</method>
+	</methods>
+</class>

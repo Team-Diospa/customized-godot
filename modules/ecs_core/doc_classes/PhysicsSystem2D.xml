@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysicsSystem2D" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Server-direct 2D physics integration for ECS entities.
+	</brief_description>
+	<description>
+		[PhysicsSystem2D] provides the 2D equivalent of the physics synchronization backend, interfacing with [PhysicsServer2D]. It is designed for high-density 2D simulations like "Bullet Hell" patterns, swarm AI, or massive physics-based particle systems.
+		[b]Design Philosophy:[/b]
+		The 2D physics backend avoids the overhead of [Node2D] signals and lifecycle methods. It treats physics as a purely data-driven process, reading from [Transform2DComponent]s and writing collision results back to the ECS registry.
+		[b]Note:[/b] Collision callbacks (area entered, body entered) are processed into a component-based queue for safety, allowing gameplay systems to respond to collisions during the parallel simulation pass without causing race conditions.
+	</description>
+	<methods>
+		<method name="process_physics_updates">
+			<return type="void" />
+			<description>
+				Flushes the current ECS transform state into the [PhysicsServer2D].
+			</description>
+		</method>
+		<method name="register_entity_physics">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<param index="1" name="shape" type="RID" />
+			<param index="2" name="space" type="RID" />
+			<description>
+				Manually creates a 2D physics body for the entity. Use this to bypass the [ECSPrefabBridge] if you are procedurally generating physics objects at runtime.
+			</description>
+		</method>
+		<method name="unregister_entity_physics">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Immediately frees the server-side physics resources for the entity.
+			</description>
+		</method>
+		<method name="solve_kinematic_movement_2d">
+			<return type="void" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="velocity" type="Vector2" />
+			<param index="2" name="delta" type="float" />
+			<description>
+				A server-direct Kinematic solver for 2D entities. Optimized for smooth sliding along surfaces and resolving high-speed collisions in a single pass.
+			</description>
+		</method>
+	</methods>
+</class>

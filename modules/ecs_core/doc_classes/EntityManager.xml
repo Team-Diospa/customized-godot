@@ -1,57 +1,133 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="EntityManager" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		Central authority for ECS entity lifecycle and component management.
+		The central architectural hub for all ECS entities and component data.
 	</brief_description>
 	<description>
-		The [EntityManager] is a singleton that manages 64-bit generational entity IDs and their associated component data. It handles high-speed component registration, retrieval, and entity destruction.
+		[EntityManager] is the high-performance core singleton responsible for the entire lifecycle of entities and the orchestration of component storage. Unlike the traditional Godot [Node]-based hierarchy, the [EntityManager] treats entities as lightweight generational IDs and stores component data in cache-friendly sparse sets.
+		This system is designed for massive scale, enabling the simulation of tens of thousands of active objects with minimal CPU overhead. It utilizes a generational ID system to prevent "dangling pointer" issues common in high-frequency creation/destruction cycles, ensuring that an ID from a previous frame never accidentally references a newly created entity in the same slot.
+		[b]Note:[/b] Structural changes (creating entities, adding components) are thread-managed but should ideally be performed via the [ECSCommandBuffer] during heavy simulation passes to avoid lock contention. Direct modification of the registry is possible but requires careful synchronization in a multi-threaded environment.
+		The [EntityManager] also serves as the registration point for component types. It maps human-readable [StringName]s to internal bitmasks used by the [ECSQuery] engine for O(1) archetype filtering.
 	</description>
 	<tutorials>
-		<link title="ECS Core Handbook - Vol 0: Getting Started">https://github.com/Team-Diospa/customized-godot/blob/main/modules/ecs_core/HANDBOOK.md</link>
+		<link title="Infrastructure &amp; Memory Geometry (Handbook Vol 1)">01_Infrastructure_Memory.md</link>
+		<link title="Scripting Bridges &amp; GDScript Integration (Handbook Vol 3)">03_Scripting_Bridges.md</link>
 	</tutorials>
 	<methods>
 		<method name="create_entity">
 			<return type="int" />
 			<description>
-				Spawns a new entity and returns its unique 64-bit ID.
+				Allocates a new unique entity ID from the world registry.
+				If the internal free list contains IDs from previously destroyed entities, the [EntityManager] will recycle the index and increment its [b]generation[/b]. This ensures that any stale references to the old entity will be correctly identified as invalid.
+				Returns a 64-bit integer representing the entity, or [constant NULL_ENTITY] if the allocation limit defined in [code]ecs/limits/max_entities[/code] is reached.
+			</description>
+		</method>
+		<method name="create_entities_bulk">
+			<return type="void" />
+			<param index="0" name="count" type="int" />
+			<description>
+				Pre-allocates a batch of [param count] entities in a single contiguous memory operation.
+				This is significantly more efficient than calling [method create_entity] in a loop, as it minimizes mutex locking and internal table reallocations. Highly recommended for spawning massive particle-like entities or initializing level data.
 			</description>
 		</method>
 		<method name="destroy_entity">
 			<return type="void" />
 			<param index="0" name="entity_id" type="int" />
 			<description>
-				Immediately destroys the entity and all its components.
+				Marks the specified [param entity_id] for destruction and immediately purges all associated component data.
+				The entity's index is returned to the free list, and its generation is incremented. Any subsequent calls to [method is_entity_valid] with this ID will return [code]false[/code].
+				[b]Caution:[/b] Destroying an entity that resides in a hierarchy will automatically trigger cleanup in the [HierarchySystem] to prevent orphaned children references.
 			</description>
 		</method>
 		<method name="is_entity_valid" qualifiers="const">
 			<return type="bool" />
 			<param index="0" name="entity_id" type="int" />
 			<description>
-				Returns [code]true[/code] if the entity ID is alive and matches the current generation.
+				Returns [code]true[/code] if the [param entity_id] refers to an entity that currently exists in the world registry.
+				This check performs a generational comparison. Since entity indices are reused, an old ID might point to a valid slot that has since been occupied by a new entity. This method ensures that the ID exactly matches the current tenant of that slot.
 			</description>
 		</method>
-		<method name="get_active_entity_count" qualifiers="const">
+		<method name="is_alive" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Similar to [method is_entity_valid], but returns the [param entity_id] itself if valid, or [constant NULL_ENTITY] if invalid. This is useful for fluent chaining in GDScript logic.
+			</description>
+		</method>
+		<method name="get_entity_count" qualifiers="const">
 			<return type="int" />
 			<description>
-				Returns the total number of currently alive entities.
+				Returns the total number of non-recycled entities currently active in the simulation.
 			</description>
 		</method>
 		<method name="add_component_untyped">
 			<return type="void" />
-			<param index="0" name="entity_id" type="int" />
-			<param index="1" name="component_name" type="StringName" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="name" type="StringName" />
 			<param index="2" name="data" type="Variant" />
 			<description>
-				Adds a component to the entity from GDScript.
+				Injects a component of type [param name] into the specified [param entity].
+				The [param data] is provided as a [Variant] blob, reflecting the component's internal structure (POD struct). If the entity already possesses this component, the existing data will be overwritten.
+				[b]Performance Note:[/b] Dynamic (untyped) component addition from scripting is slower than native C++ additions due to Variant marshaling and string-based lookup.
+			</description>
+		</method>
+		<method name="update_component_untyped">
+			<return type="void" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="name" type="StringName" />
+			<param index="2" name="data" type="Variant" />
+			<description>
+				Modifies the data of an existing component. If the [param entity] does not have a component of type [param name], no operation is performed.
+			</description>
+		</method>
+		<method name="get_entity_proxy">
+			<return type="ECSEntityProxy" />
+			<param index="0" name="entity" type="int" />
+			<description>
+				Constructs a temporary [ECSEntityProxy] object that "wraps" the raw entity ID.
+				This proxy behaves like a standard Godot [Object], allowing you to view and edit ECS components directly in the Editor Inspector or via standard property access [code]proxy.health = 100[/code]. The proxy is intended for debugging and tool development; avoid using it in high-frequency simulation loops.
+			</description>
+		</method>
+		<method name="set_entity_position">
+			<return type="void" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="x" type="float" />
+			<param index="2" name="y" type="float" />
+			<param index="3" name="z" type="float" />
+			<description>
+				A highly optimized "fast-track" method for updating the [TransformComponent] of an entity. Bypasses general-purpose property reflection to directly manipulate the SIMD-aligned transform buffer.
+			</description>
+		</method>
+		<method name="create_query">
+			<return type="ECSQuery" />
+			<description>
+				Returns a new [ECSQuery] instance initialized with a reference to this [EntityManager]'s registries. Queries are used to find all entities matching a specific set of required or excluded components.
+			</description>
+		</method>
+		<method name="validate_generational_integrity">
+			<return type="bool" />
+			<description>
+				Performs a deep-scan of the world registry to detect any internal corruption or generational inconsistencies. Returns [code]true[/code] if the state is healthy.
 			</description>
 		</method>
 	</methods>
+	<signals>
+		<signal name="entity_created">
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Emitted immediately after a new ID is reserved in the registry. Useful for reactive systems that need to initialize per-entity resources (like UI labels or secondary caches).
+			</description>
+		</signal>
+		<signal name="entity_destroyed">
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Emitted just before an entity is purged. Use this to clean up external handles or references associated with the entity ID.
+			</description>
+		</signal>
+	</signals>
 	<constants>
-		<constant name="BIT_TRANSFORM" value="1" enum="ComponentBit">
-			Bitmask for 3D Transform components.
-		</constant>
-		<constant name="BIT_AUDIO" value="64" enum="ComponentBit">
-			Bitmask for Audio components.
+		<constant name="NULL_ENTITY" value="0">
+			A special reserved value representing a non-existent or invalid entity. Guaranteed to never be returned by [method create_entity].
 		</constant>
 	</constants>
 </class>

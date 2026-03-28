@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysicsSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Massive-scale 3D physics synchronization backend.
+	</brief_description>
+	<description>
+		[PhysicsSystem] manages the interaction between high-performance ECS entities and Godot's [PhysicsServer3D]. It is engineered to support scenarios with thousands of active physics bodies (e.g., destructible debris, kinematic characters, or hundreds of simultaneous projectiles).
+		The system operates by synchronizing [b]SIMD-aligned transforms[/b] from the [EntityManager] directly to the physics server's internal state. It supports both [b]RigidBody[/b] (server-driven) and [b]Kinematic[/b] (ECS-driven) entities.
+		[b]Performance Highlights:[/b]
+		- [b]Parallel Solver:[/b] Kinematic motion resolution is performed on the [WorkerThreadPool], bypassing the single-threaded bottlenecks of the traditional scene tree.
+		- [b]Direct Table Dispatch:[/b] O(1) correlation between entity IDs and physics server RIDs.
+		- [b]Predictive Sync:[/b] Integrates with Godot's physics interpolation to ensure smooth visual results even at variable frame rates.
+		[b]Note:[/b] To enable physics for an entity, you must attach a [PhysicsBody3DComponent] and register its shape via [method register_entity_physics].
+	</description>
+	<tutorials>
+		<link title="Systems &amp; Simulation (Handbook Vol 2)">02_Systems_Simulation.md</link>
+	</tutorials>
+	<methods>
+		<method name="process_physics_updates">
+			<return type="void" />
+			<description>
+				Synchronizes all entity world transforms from the ECS registry to the [PhysicsServer3D].
+				[b]Note:[/b] This is normally handled automatically by the [ECSScheduler] during the [NOTIFICATION_PHYSICS_PROCESS] phase. Call this manually only if you need to force a collision update mid-tick.
+			</description>
+		</method>
+		<method name="register_entity_physics">
+			<return type="void" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="shape" type="RID" />
+			<param index="2" name="space" type="RID" />
+			<param index="3" name="mode" type="int" default="0" />
+			<description>
+				Allocates a low-level physics body on the server and attaches it to the entity.
+				The [param mode] determines how the body interacts with the world (static, kinematic, rigid, etc.). Once registered, the [PhysicsSystem] will automatically keep the body's transform in sync with the ECS [WorldTransformComponent].
+			</description>
+		</method>
+		<method name="solve_kinematic_movement_3d">
+			<return type="void" />
+			<param index="0" name="entity" type="int" />
+			<param index="1" name="velocity" type="Vector3" />
+			<param index="2" name="delta" type="float" />
+			<description>
+				Performs a high-performance kinematic "Move and Slide" operation for the entity.
+				This method bypasses [CharacterBody3D] logic to perform raw [code]test_motion[/code] calls against the [PhysicsServer3D]. It is highly optimized for mass-character simulations where hundreds of independent AI agents need to navigate a complex collision environment.
+			</description>
+		</method>
+	</methods>
+</class>

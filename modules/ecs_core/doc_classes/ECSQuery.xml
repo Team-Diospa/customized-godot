@@ -1,36 +1,44 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ECSQuery" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		High-performance entity filtering DSL.
+		Declarative filtering engine for identifying relevant entity sets.
 	</brief_description>
 	<description>
-		[ECSQuery] allows for defining complex filters to retrieve specific subsets of entities based on their component masks.
+		[ECSQuery] provides a fluent, high-performance interface for searching the ECS world. It allows you to build complex filters based on component Archetypes (composition).
+		Queries use an internal bitmask system that allows for O(1) matching against billions of archetype combinations. Once built, a query can be executed repeatedly to retrieve a fresh set of matching entity IDs.
+		[b]Usage Pattern:[/b]
+		[codeblock]
+		var query = EntityManager.get_singleton().create_query()
+		    .with_component("TransformComponent")
+		    .with_component("HealthComponent")
+		    .without_component("InvisibleComponent")
+		
+		var results = query.execute()
+		for id in results:
+		    # Process entity...
+		[/codeblock]
+		[b]Tip:[/b] Queries are [RefCounted]. You should store and reuse query objects in your systems rather than creating new ones every frame to save on allocation overhead.
 	</description>
 	<methods>
-		<method name="create" qualifiers="static">
-			<return type="ECSQuery" />
-			<description>
-				Creates a new query object.
-			</description>
-		</method>
 		<method name="with_component">
 			<return type="ECSQuery" />
-			<param index="0" name="bit" type="int" />
+			<param index="0" name="component_name" type="StringName" />
 			<description>
-				Adds a requirement that the entity MUST have the specified component bit.
+				Adds a [b]Required[/b] constraint to the filter. The query will only return entities that possess this component type.
 			</description>
 		</method>
 		<method name="without_component">
 			<return type="ECSQuery" />
-			<param index="0" name="bit" type="int" />
+			<param index="0" name="component_name" type="StringName" />
 			<description>
-				Adds a requirement that the entity MUST NOT have the specified component bit.
+				Adds an [b]Exclusion[/b] constraint to the filter. The query will skip any entity that possesses this component type.
 			</description>
 		</method>
 		<method name="execute">
-			<return type="Array" />
+			<return type="PackedInt64Array" />
 			<description>
-				Performs the join and returns an array of matching entity IDs.
+				Performs the search across all active entity registries. Returns an array of entity IDs that satisfy all defined constraints.
+				[b]Note:[/b] This operation involves a parallel scan of the archetype tables. While fast, for very complex filters or massive worlds, it is best called at the start of a system's update cycle.
 			</description>
 		</method>
 	</methods>

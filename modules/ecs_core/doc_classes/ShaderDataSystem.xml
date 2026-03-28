@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ShaderDataSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Procedural drive for per-entity visual effects.
+	</brief_description>
+	<description>
+		[ShaderDataSystem] is a specialized controller for the [ShaderDataComponent]. In the "Titanium ECS" architecture, per-instance visual variance (like health-based desaturation, glitch intensity, or team colors) is driven by an array of floats pushed to the GPU.
+		This system automates the update of these values, allowing for complex procedural effects to be applied across thousands of entities without manual property editing. It is particularly used for environmental storytelling and real-time visual corruption effects.
+	</description>
+	<methods>
+		<method name="update_horror_params">
+			<return type="void" />
+			<param index="0" name="delta" type="float" />
+			<description>
+				Increments the procedural noise or interpolation timers for all active shader data components. Use this to create dynamic, pulsing, or flickering material effects.
+			</description>
+		</method>
+	</methods>
+</class>

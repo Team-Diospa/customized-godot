@@ -1,30 +1,62 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ECSSerializer" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		Handles binary persistence and networking snapshots for the ECS.
+		The persistence backbone for ECS world data and state synchronization.
 	</brief_description>
 	<description>
-		[ECSSerializer] provides methods to save and load the entire world state to disk, and to capture high-frequency snapshots for networked multiplayer.
+		[ECSSerializer] provides a suite of tools for converting the in-memory ECS registry into persistent formats. It is designed to handle both full "Game Save" worlds and lightweight "Network Deltas".
+		The serializer uses a high-performance binary format that preserves the generational integrity of entities and the precise alignment of component data. It is capable of saving/loading millions of entities in milliseconds, bypassing the serialization overhead of standard Godot [Resource]s.
+		[b]Feature Set:[/b]
+		- [b]Full Snapshots:[/b] Complete world dumps for cold-storage saves.
+		- [b]Delta Compression:[/b] Calculates the difference between two states, saving only modified components. Ideal for multiplayer replication.
+		- [b]Binary Blobs:[/b] Memory-direct serialization for high-speed Undo/Redo or rollback networking.
+		[b]Note:[/b] The serializer automatically handles component registration differences; if a component type is removed from the engine code, its data in old save files will be safely skipped during load.
 	</description>
+	<tutorials>
+		<link title="Serialization &amp; Persistence (Handbook Vol 4)">04_Serialization_Persistence.md</link>
+	</tutorials>
 	<methods>
 		<method name="save_world">
 			<return type="int" />
 			<param index="0" name="path" type="String" />
 			<description>
-				Saves the current world state to a binary file.
+				Serializes the entire [EntityManager] state to a binary file at [param path].
+				Returns [constant OK] on success, or an error code if the file cannot be written. This operation is blocking and should typically be performed in a background thread for large worlds.
+			</description>
+		</method>
+		<method name="save_delta">
+			<return type="int" />
+			<param index="0" name="path" type="String" />
+			<param index="1" name="baseline" type="Dictionary" />
+			<description>
+				Compares the current world state against a previously captured [param baseline] snapshot and saves only the changes. This significantly reduces save file size for incremental progress.
 			</description>
 		</method>
 		<method name="load_world">
 			<return type="int" />
 			<param index="0" name="path" type="String" />
 			<description>
-				Loads a world state from a binary file, replacing the current simulation.
+				Clears the current [EntityManager] and reconstructs it entirely from the binary data at [param path].
+				Existing entities and components are destroyed before the load begins. [b]Warning:[/b] This is a destructive operation.
+			</description>
+		</method>
+		<method name="capture_snapshot">
+			<return type="Dictionary" />
+			<description>
+				Creates a [Dictionary] representation of the world. Each key is an entity ID and the value is a nested dictionary of its components. Perfect for JSON-based debug reporting or web-based world viewers.
 			</description>
 		</method>
 		<method name="capture_snapshot_binary">
 			<return type="PackedByteArray" />
 			<description>
-				Returns a compact binary delta of the current simulation state.
+				Returns the current state as a raw [PackedByteArray]. This is the most efficient way to store world state for short-term persistence like checkpointing or networking.
+			</description>
+		</method>
+		<method name="apply_snapshot_delta">
+			<return type="int" />
+			<param index="0" name="delta" type="PackedByteArray" />
+			<description>
+				Patches the current world state using a binary delta blob. Entities and components NOT mentioned in the delta are left unchanged. This is the primary method for high-performance server-to-client updates.
 			</description>
 		</method>
 	</methods>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="RenderingSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Hardware-accelerated Data-Oriented 3D renderer.
+	</brief_description>
+	<description>
+		[RenderingSystem] is the bridge between the high-speed data structures of the ECS and Godot's [RenderingServer]. It is designed for "Massive Instance" scenarios where thousands of 3D objects (e.g., foliage, projectiles, crowd characters) need to be drawn without the per-object CPU overhead of standard [Node3D]/[MeshInstance3D] nodes.
+		This system utilizes [b]Hardware Instancing[/b] via [MultiMesh] to collapse entire entity archetypes into single draw calls. It maintains internal GPU buffers for instance transforms, colors, and custom shader parameters, updating only the entities that have moved or changed between frames.
+		[b]Key Features:[/b]
+		- [b]Frustum Culling integration:[/b] Automatically skips transform updates for entities outside the camera view via the [OctreeSystem].
+		- [b]Zero-Copy Pipeline:[/b] Transmits data directly from ECS sparse-sets to GPU buffers where possible.
+		- [b]LOD-Ready Design:[/b] Prepared for future high-performance level-of-detail transitions.
+		[b]Note:[/b] To use this system, you must first provide a base mesh and scenario RID via [method initialize_hardware_instancing].
+	</description>
+	<tutorials>
+		<link title="Presentation &amp; Visuals (Handbook Vol 5)">05_Presentation_Visuals.md</link>
+	</tutorials>
+	<methods>
+		<method name="initialize_hardware_instancing">
+			<return type="void" />
+			<param index="0" name="mesh" type="RID" />
+			<param index="1" name="scenario" type="RID" />
+			<description>
+				Initializes the shared [MultiMesh] resources.
+				Entities that possess a [WorldTransformComponent] and are relevant to this system's archetype will be rendered using the specified [param mesh] within the given [param scenario]. This should normally be called once during scene initialization or when loading a new level.
+			</description>
+		</method>
+		<method name="process_render_updates">
+			<return type="void" />
+			<description>
+				Triggers a manual synchronization of all ECS transforms to the GPU instance buffers.
+				[b]Note:[/b] This is normally handled automatically by the [ECSScheduler] during the [NOTIFICATION_PROCESS] phase. Call this manually only if you require mid-frame synchronization for secondary viewports or custom render passes.
+			</description>
+		</method>
+		<method name="set_frustum_culling_enabled">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], the system will consult the [OctreeSystem] before every render update. Entities outside the provided view AABB will have their transform updates skipped, saving significant PCI-E bandwidth and GPU compute time.
+			</description>
+		</method>
+		<method name="set_view_aabb">
+			<return type="void" />
+			<param index="0" name="aabb" type="AABB" />
+			<description>
+				Defines the world-space bounding box used for frustum culling. This should typically be updated from the main camera's frustum every frame.
+			</description>
+		</method>
+	</methods>
+</class>

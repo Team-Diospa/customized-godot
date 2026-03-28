@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="NavigationSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Parallel agent pathfinding and navigation controller.
+	</brief_description>
+	<description>
+		[NavigationSystem] manages pathfinding logic for ECS entities. it acts as a bridge to [NavigationServer3D], allowing thousands of agents (NPCs, enemies) to query maps, avoid obstacles, and slide along navmesh surfaces.
+		The system supports [b]Asynchronous Path Queries[/b], ensuring that pathfinding calculations for massive crowds do not stall the main thread. Results are delivered back to entities via the [NavigationAgent3DComponent].
+		[b]Note:[/b] This system requires a valid [NavigationMesh] to be baked and registered on the [NavigationServer3D] separately.
+	</description>
+	<methods>
+		<method name="process_navigation_updates">
+			<return type="void" />
+			<param index="0" name="delta" type="float" />
+			<description>
+				Polls the [NavigationServer3D] for path results and updates the target velocities for all active agents.
+			</description>
+		</method>
+	</methods>
+</class>

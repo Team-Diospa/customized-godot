@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="RenderingSystem2D" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Optimized 2D canvas batcher for massive sprite populations.
+	</brief_description>
+	<description>
+		[RenderingSystem2D] provides the 2D equivalent of the 3D rendering backend. It is optimized for "Bullet Hell" scenarios or massive 2D tile-based populations where [Node2D] overhead becomes a bottleneck.
+		By using [method RenderingServer.canvas_item_add_multimesh], this system can draw tens of thousands of sprites (each with unique positions, rotations, and scales) in exactly [b]one GPU draw call[/b].
+		[b]Note:[/b] Unlike standard sprites, entities rendered through this system do not participate in Godot's Y-sorting or Z-index calculations automatically. They are drawn relative to the parent [CanvasItem] provided during initialization.
+	</description>
+	<methods>
+		<method name="initialize_canvas_batching">
+			<return type="void" />
+			<param index="0" name="parent_canvas" type="RID" />
+			<param index="1" name="texture" type="RID" />
+			<description>
+				Sets up the internal [MultiMesh2D] and attaches it to the specified [param parent_canvas]. All sprites managed by the ECS will share the provided [param texture] for batching efficiency.
+			</description>
+		</method>
+		<method name="process_render_updates">
+			<return type="void" />
+			<description>
+				Pushes the latest [Transform2DComponent] data from the ECS into the canvas item's buffer.
+			</description>
+		</method>
+	</methods>
+</class>

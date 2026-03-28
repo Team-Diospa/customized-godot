@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="InputBufferSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Decouples OS and Engine input from the deterministic ECS simulation.
+	</brief_description>
+	<description>
+		[InputBufferSystem] is a middleware layer designed for gameplay sensitivity and determinism. it collects events from Godot's [Input] singleton and buffers them into entity-level [InputComponent]s.
+		This decoupling is essential for simulation features like [b]Input Replay[/b], [b]Network Rollback[/b], and "Glitch Horror" mechanics where the game might procedurally override or corrupt player controls. 
+		[b]Feature Set:[/b]
+		- [b]Action Remapping:[/b] Dynamically swap player controls during runtime for different gameplay modes (e.g., vehicle vs. on-foot).
+		- [b]Input Locking:[/b] Global control inhibition for cutscenes or menu interaction.
+		- [b]Low-Latency Polling:[/b] Synchronized with the fixed physics tick for frame-perfect character control.
+	</description>
+	<methods>
+		<method name="lock_player_input">
+			<return type="void" />
+			<param index="0" name="locked" type="bool" />
+			<description>
+				If [param locked] is [code]true[/code], all entities with an [InputComponent] will receive static "neutral" values, effectively ignoring physical hardware input.
+			</description>
+		</method>
+		<method name="remap_action">
+			<return type="void" />
+			<param index="0" name="virtual_action" type="StringName" />
+			<param index="1" name="real_action" type="StringName" />
+			<description>
+				Maps a virtual name (used by your ECS systems) to a physical Godot Input Action (defined in the Project Input Map).
+			</description>
+		</method>
+		<method name="process_input_buffer">
+			<return type="void" />
+			<description>
+				Captures the current state of physical input devices and pushes them into the corresponding ECS components.
+			</description>
+		</method>
+	</methods>
+</class>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="AnimationSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Parallelized animation engine for high-frequency property and skeletal updates.
+	</brief_description>
+	<description>
+		[AnimationSystem] handles the time-based progression of entity states. It is designed to decouple animation logic from the frame rate, providing smooth interpolation and state blending for massive entity counts.
+		The system operates on the [b]multi-threaded simulation pass[/b], allowing it to process thousands of skeletal bone transforms in parallel. It supports two primary modes:
+		- [b]Property Animation:[/b] Driving component values (like opacity, scale, or custom shader params) over time.
+		- [b]Skeletal Animation:[/b] Updating bone hierarchies for characters. Bone data is stored in the [BoneBufferComponent] and pushed directly to the [RenderingServer] or [Skeleton3D] nodes.
+		[b]Performance Note:[/b] This system uses a "baked" animation approach where keyframes are pre-processed into SIMD-friendly buffers, minimizing the lookup overhead during execution.
+	</description>
+	<methods>
+		<method name="process_animation_updates">
+			<return type="void" />
+			<param index="0" name="delta" type="float" />
+			<description>
+				Advances the animation clocks for all entities with an [AnimationComponent]. It performs linear or cubic interpolation based on the current state and updates the target component values in the registry.
+			</description>
+		</method>
+		<method name="process_skeletal_updates">
+			<return type="void" />
+			<description>
+				Specifically handles the bone-transform skinning logic. It reads the local bone matrices, applies the global entity transform, and prepares the final world-space matrices for the renderer.
+			</description>
+		</method>
+	</methods>
+</class>

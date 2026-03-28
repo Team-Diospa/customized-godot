@@ -1,23 +1,43 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ECSCommandBuffer" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		Thread-safe structural change queue.
+		Thread-safe staging area for deferred structural changes.
 	</brief_description>
 	<description>
-		[ECSCommandBuffer] allows systems running on background threads to request entity destruction or component changes safely without invalidating active iterators.
+		[ECSCommandBuffer] is a critical tool for maintaining simulation stability in multi-threaded systems. It allows systems to queue "Structural Changes" (creating/destroying entities, modifying archetypes) without immediately applying them to the world.
+		Modifying the [EntityManager]'s internal tables while other systems are iterating over them is dangerous and can lead to crashes or undefined behavior. By using the command buffer, systems can record their intent during the parallel simulation pass, and the [ECSScheduler] will "flush" these recorded commands in a single, safe, serial pass at the end of the frame.
+		[b]Note:[/b] Commands are applied in the exact order they were queued. If two systems queue conflicting commands for the same entity, the command queued last will prevail.
 	</description>
 	<methods>
 		<method name="queue_destroy_entity">
 			<return type="void" />
 			<param index="0" name="entity_id" type="int" />
 			<description>
-				Queues an entity for destruction at the end of the current frame.
+				Records a request to destroy [param entity_id]. The entity will remain valid for the remainder of the current simulation tick but will be purged during the next buffer flush.
+			</description>
+		</method>
+		<method name="queue_remove_component">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<param index="1" name="component_name" type="StringName" />
+			<description>
+				Records a request to remove a specific component type from an entity.
+			</description>
+		</method>
+		<method name="queue_add_component">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<param index="1" name="component_name" type="StringName" />
+			<param index="2" name="data" type="Variant" />
+			<description>
+				Records a request to add or update a component. If the entity is being created in the same frame, this command will be correctly associated with the new ID.
 			</description>
 		</method>
 		<method name="execute_deferred_commands">
 			<return type="void" />
 			<description>
-				Executes all queued commands. Usually called automatically by the [ECSScheduler].
+				Manually flushes the internal queue, applying all pending modifications to the [EntityManager].
+				[b]Note:[/b] This is normally performed automatically by the [ECSScheduler]. Calling this manually during a system's [code]update[/code] function is highly discouraged as it can invalidate existing queries.
 			</description>
 		</method>
 	</methods>

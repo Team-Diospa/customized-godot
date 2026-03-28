@@ -1,29 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ECSEntityProxy" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		High-level Variant wrapper for a raw ECS Entity.
+		Inspectable dynamic Object representing a raw ECS entity.
 	</brief_description>
 	<description>
-		[ECSEntityProxy] allows GDScript to interact with ECS entities through Godot's standard property system. It provides a bridge between low-level DOD (Data Oriented Design) and high-level scripting.
+		[ECSEntityProxy] solves the "Data Visibility" problem in ECS architecture. Since raw entities are just 64-bit integers, they cannot be seen in the Godot Inspector. The proxy acts as a dynamic bridge, allowing a raw entity's component data to be exposed as standard Godot properties.
+		When you select an entity in the editor debug view or create a proxy in GDScript, this object queries the [EntityManager] for all components attached to the target ID and dynamically populates its property list.
+		[b]Usage:[/b]
+		- [b]Editor Integration:[/b] View and edit ECS values directly in the Inspector during runtime.
+		- [b]GDScript Ease-of-Use:[/b] Access ECS data using dot-notation [code]proxy.my_value = 10[/code] instead of complex dictionary lookups.
+		[b]Warning:[/b] The proxy is an abstraction layer. It involves significant overhead compared to raw sparse-set access. Use it sparingly for UI, tools, and one-off gameplay logic, never for high-performance systems.
 	</description>
 	<methods>
 		<method name="set_entity">
 			<return type="void" />
-			<param index="0" name="entity_id" type="int" />
+			<param index="0" name="id" type="int" />
 			<description>
-				Binds this proxy to a specific 64-bit entity ID.
+				Points this proxy to a specific entity ID. The proxy will immediately refresh its property list to reflect the new target's components.
 			</description>
 		</method>
 		<method name="get_entity" qualifiers="const">
 			<return type="int" />
 			<description>
-				Returns the current entity ID this proxy represents.
+				Returns the raw 64-bit ID of the entity that this proxy currently represents.
 			</description>
 		</method>
 		<method name="sync_telemetry">
 			<return type="void" />
 			<description>
-				Updates the proxy's internal state with real-time simulation data from the entity.
+				Forces the proxy to resynchronize its internal property cache with the ECS registries. Useful if components are being modified by high-frequency C++ systems and you need to see real-time updates in a custom UI or tool.
 			</description>
 		</method>
 	</methods>

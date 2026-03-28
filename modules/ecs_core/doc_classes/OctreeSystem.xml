@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="OctreeSystem" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		SIMD-optimized spatial partitioning hub.
+	</brief_description>
+	<description>
+		[OctreeSystem] provides high-speed spatial indexing for the ECS world. It maintains a hierarchical volume of all entities with spatial presence ([TransformComponent]), enabling O(log N) queries for distance, intersection, and containment.
+		The octree implementation is highly hardened for "Hyper-Active" scenarios where thousands of entities move every frame. It utilizes a "Lazy Rebuild" strategy to minimize tree restructuring overhead while maintaining precise query results.
+		[b]Use Cases:[/b]
+		- [b]Rendering:[/b] Frustum culling for the [RenderingSystem].
+		- [b]AI:[/b] "Nearest Neighbor" detection for flocking or combat target selection.
+		- [b]Physics:[/b] Broad-phase optimization for custom collision triggers.
+		[b]Note:[/b] The octree is automatically updated as entities move, but can be manually triggered via [method rebuild_octree] if the world's bounds change significantly.
+	</description>
+	<tutorials>
+		<link title="Infrastructure &amp; Spatial Partitioning (Handbook Vol 1)">01_Infrastructure_Memory.md</link>
+	</tutorials>
+	<methods>
+		<method name="rebuild_octree">
+			<return type="void" />
+			<description>
+				Forces a full reconstruction of the spatial tree. This operation clears all nodes and re-inserts every entity from the world transforms registry.
+				[b]Caution:[/b] This is a heavy operation. It is automatically performed only when the tree's depth or root boundaries are exceeded. Manual calls should be rare.
+			</description>
+		</method>
+		<method name="query_aabb" qualifiers="const">
+			<return type="Array" />
+			<param index="0" name="aabb" type="AABB" />
+			<description>
+				Returns a list of entity IDs whose bounding boxes intersect with the provided [param aabb].
+				This query is extremely fast and is the primary way to perform area-of-effect checks or proximity detection in the ECS.
+			</description>
+		</method>
+	</methods>
+</class>
