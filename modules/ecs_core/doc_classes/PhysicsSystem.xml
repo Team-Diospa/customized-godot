@@ -28,10 +28,10 @@
 			<param index="0" name="entity" type="int" />
 			<param index="1" name="shape" type="RID" />
 			<param index="2" name="space" type="RID" />
-			<param index="3" name="mode" type="int" default="0" />
+			<param index="3" name="mode" type="int" enum="PhysicsServer3D.BodyMode" default="0" />
 			<description>
 				Allocates a low-level physics body on the server and attaches it to the entity.
-				The [param mode] determines how the body interacts with the world (static, kinematic, rigid, etc.). Once registered, the [PhysicsSystem] will automatically keep the body's transform in sync with the ECS [WorldTransformComponent].
+				The [param mode] determines how the body interacts with the world (static, kinematic, rigid, etc.), using the [enum PhysicsServer3D.BodyMode] enumeration. Once registered, the [PhysicsSystem] will automatically keep the body's transform in sync with the ECS [WorldTransformComponent].
 			</description>
 		</method>
 		<method name="solve_kinematic_movement_3d">

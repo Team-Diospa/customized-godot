@@ -17,11 +17,11 @@
 	</tutorials>
 	<methods>
 		<method name="save_world">
-			<return type="int" />
+			<return type="int" enum="Error" />
 			<param index="0" name="path" type="String" />
 			<description>
 				Serializes the entire [EntityManager] state to a binary file at [param path].
-				Returns [constant OK] on success, or an error code if the file cannot be written. This operation is blocking and should typically be performed in a background thread for large worlds.
+				Returns [constant OK] on success, or an appropriate [enum Error] code if the file cannot be written. This operation is blocking and should typically be performed in a background thread for large worlds.
 			</description>
 		</method>
 		<method name="save_delta">
@@ -33,11 +33,11 @@
 			</description>
 		</method>
 		<method name="load_world">
-			<return type="int" />
+			<return type="int" enum="Error" />
 			<param index="0" name="path" type="String" />
 			<description>
 				Clears the current [EntityManager] and reconstructs it entirely from the binary data at [param path].
-				Existing entities and components are destroyed before the load begins. [b]Warning:[/b] This is a destructive operation.
+				Returns [constant OK] on success, or an appropriate [enum Error] code. Existing entities and components are destroyed before the load begins. [b]Warning:[/b] This is a destructive operation.
 			</description>
 		</method>
 		<method name="capture_snapshot">

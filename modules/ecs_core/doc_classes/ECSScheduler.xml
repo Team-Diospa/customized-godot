@@ -55,7 +55,8 @@
 			<param index="2" name="write_mask" type="int" />
 			<description>
 				Defines the "Archetype Interest" of a system.
-				The [param read_mask] and [param write_mask] are bitfields representing the component types the system accesses. The [ECSScheduler] uses this information to detect race conditions and automatically parallelize systems that operate on distinct data sets.
+				The [param read_mask] and [param write_mask] are bitfields representing the component types the system accesses. Use the [code]BIT_*[/code] constants from [EntityManager] to build these masks (e.g., [code]EntityManager.BIT_TRANSFORM | EntityManager.BIT_PHYSICS_3D[/code]). 
+				The [ECSScheduler] uses this information to detect race conditions and automatically parallelize systems that operate on distinct data sets. If two systems share a write bit, they will be forced to run sequentially.
 			</description>
 		</method>
 		<method name="get_detailed_stats" qualifiers="const">

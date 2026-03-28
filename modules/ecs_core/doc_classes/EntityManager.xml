@@ -129,5 +129,62 @@
 		<constant name="NULL_ENTITY" value="0">
 			A special reserved value representing a non-existent or invalid entity. Guaranteed to never be returned by [method create_entity].
 		</constant>
+		<constant name="BIT_TRANSFORM" value="1">
+			Bitmask identifying the [TransformComponent] (3D).
+		</constant>
+		<constant name="BIT_TRANSFORM_2D" value="2">
+			Bitmask identifying the [Transform2DComponent] (2D).
+		</constant>
+		<constant name="BIT_PARENTS" value="4">
+			Bitmask identifying the [ParentComponent] (3D Hierarchy).
+		</constant>
+		<constant name="BIT_PARENTS_2D" value="8">
+			Bitmask identifying the [Parent2DComponent] (2D Hierarchy).
+		</constant>
+		<constant name="BIT_WORLD_TRANSFORM" value="16">
+			Bitmask identifying the [WorldTransformComponent] (3D Computed).
+		</constant>
+		<constant name="BIT_WORLD_TRANSFORM_2D" value="32">
+			Bitmask identifying the [WorldTransform2DComponent] (2D Computed).
+		</constant>
+		<constant name="BIT_AUDIO" value="64">
+			Bitmask identifying the [AudioComponent].
+		</constant>
+		<constant name="BIT_INPUT" value="128">
+			Bitmask identifying the [InputComponent].
+		</constant>
+		<constant name="BIT_ANIMATION" value="256">
+			Bitmask identifying the [AnimationComponent].
+		</constant>
+		<constant name="BIT_SHADER_DATA" value="512">
+			Bitmask identifying the [ShaderDataComponent].
+		</constant>
+		<constant name="BIT_DEBUG" value="1024">
+			Bitmask identifying the [DebugComponent].
+		</constant>
+		<constant name="BIT_PHYSICS_3D" value="2048">
+			Bitmask identifying the [PhysicsBody3DComponent].
+		</constant>
+		<constant name="BIT_KINEMATIC_3D" value="4096">
+			Bitmask identifying the [KinematicController3DComponent].
+		</constant>
+		<constant name="BIT_SKELETON_BRIDGE" value="8192">
+			Bitmask identifying the [ECSSkeletonBridgeComponent].
+		</constant>
+		<constant name="BIT_BONE_BUFFER" value="16384">
+			Bitmask identifying the [BoneBufferComponent].
+		</constant>
+		<constant name="BIT_AUDIO_VOICE" value="32768">
+			Bitmask identifying the [AudioVoiceComponent].
+		</constant>
+		<constant name="BIT_NAVIGATION_3D" value="65536">
+			Bitmask identifying the [NavigationAgent3DComponent].
+		</constant>
+		<constant name="BIT_TELEMETRY" value="131072">
+			Bitmask identifying the [ECSTelemetryComponent].
+		</constant>
+		<constant name="BIT_AABB" value="262144">
+			Bitmask identifying the [AABBComponent].
+		</constant>
 	</constants>
 </class>
