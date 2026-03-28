@@ -7,6 +7,7 @@
 #include <random>
 #include <thread>
 #include <atomic>
+#include <numeric>
 
 // --- MOCK TYPES ---
 struct Entity {
@@ -139,27 +140,51 @@ int main() {
         std::cout << "[EntityManager] Memory Density:       " << entity_size << " bytes/entity (Target: <16)" << std::endl;
     }
 
-    // 8. MULTI-THREAD SCALING (Scheduler Simulation)
+
+    // 9. FRAGMENTED ACCESS (SparseSet Stress)
     {
-        const int THREAD_COUNT = 4;
-        std::atomic<int> work_done(0);
+        SparseSet ss(ENTITY_COUNT * 2);
+        for (int i = 0; i < ENTITY_COUNT; i++) ss.insert(i, (float)i);
         
-        auto start = std::chrono::high_resolution_clock::now();
-        std::vector<std::thread> workers;
-        for (int t = 0; t < THREAD_COUNT; t++) {
-            workers.emplace_back([&work_done, ENTITY_COUNT]() {
-                for (int i = 0; i < ENTITY_COUNT / 4; i++) {
-                    work_done++;
-                }
-            });
+        // Delete 50% randomly to fragment sparse set
+        std::vector<int> indices(ENTITY_COUNT);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::shuffle(indices.begin(), indices.end(), std::mt19937{std::random_device{}()});
+        
+        for (int i = 0; i < ENTITY_COUNT / 2; i++) {
+            uint32_t ent = indices[i];
+            // Simulating remove: just clear sparse entry for this mock
+            ss.sparse[ent] = 0xFFFFFFFF;
         }
-        for (auto& w : workers) {
-            w.join();
+
+        auto start = std::chrono::high_resolution_clock::now();
+        volatile float sum = 0;
+        for (uint32_t d : ss.dense) {
+            if (ss.sparse[d] != 0xFFFFFFFF) {
+                sum += ss.data[ss.sparse[d]];
+            }
         }
         auto end = std::chrono::high_resolution_clock::now();
-        
         std::chrono::duration<double, std::micro> us = end - start;
-        std::cout << "[ECSScheduler]  Multi-core Dispatch:   " << us.count() << "us (Target: <500us)" << std::endl;
+        std::cout << "[SparseSet]     Fragmented Iteration: " << us.count() << "us (Target: <1000us)" << std::endl;
+    }
+
+    // 10. COMPLEX QUERY (Multi-Component)
+    {
+        struct Velocity { float dx, dy, dz; };
+        struct Mass { float m; };
+        std::vector<Transform> t_comp(TRANSFORM_COUNT);
+        std::vector<Velocity> v_comp(TRANSFORM_COUNT);
+        std::vector<Mass> m_comp(TRANSFORM_COUNT);
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < TRANSFORM_COUNT; i++) {
+            v_comp[i].dx += m_comp[i].m * 0.01f;
+            t_comp[i].pos[0] += v_comp[i].dx;
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::micro> us = end - start;
+        std::cout << "[EntityManager] Complex Query (3-way): " << us.count() << "us (Target: <200us)" << std::endl;
     }
 
     std::cout << "==========================================" << std::endl;
