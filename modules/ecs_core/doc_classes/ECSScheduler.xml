@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ECSScheduler" inherits="Node" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Main execution heart of the ECS simulation.
+	</brief_description>
+	<description>
+		The [ECSScheduler] manages the registration and execution of simulation systems. It handles both per-frame process systems and fixed-tick physics systems.
+	</description>
+	<methods>
+		<method name="register_process_system">
+			<return type="void" />
+			<param index="0" name="system" type="Callable" />
+			<description>
+				Adds a GDScript function or C++ callable to the main process loop.
+			</description>
+		</method>
+		<method name="register_physics_system">
+			<return type="void" />
+			<param index="0" name="system" type="Callable" />
+			<description>
+				Adds a callable to the physics-rate simulation loop.
+			</description>
+		</method>
+		<method name="set_system_enabled">
+			<return type="void" />
+			<param index="0" name="system" type="Callable" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				Enables or disables a specific system dynamically.
+			</description>
+		</method>
+		<method name="get_detailed_stats" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns hardware telemetry and per-system timing data.
+			</description>
+		</method>
+	</methods>
+</class>

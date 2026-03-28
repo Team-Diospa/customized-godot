@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ECSCommandBuffer" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Thread-safe structural change queue.
+	</brief_description>
+	<description>
+		[ECSCommandBuffer] allows systems running on background threads to request entity destruction or component changes safely without invalidating active iterators.
+	</description>
+	<methods>
+		<method name="queue_destroy_entity">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Queues an entity for destruction at the end of the current frame.
+			</description>
+		</method>
+		<method name="execute_deferred_commands">
+			<return type="void" />
+			<description>
+				Executes all queued commands. Usually called automatically by the [ECSScheduler].
+			</description>
+		</method>
+	</methods>
+</class>

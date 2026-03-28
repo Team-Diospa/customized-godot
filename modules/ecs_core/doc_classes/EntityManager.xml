@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="EntityManager" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Central authority for ECS entity lifecycle and component management.
+	</brief_description>
+	<description>
+		The [EntityManager] is a singleton that manages 64-bit generational entity IDs and their associated component data. It handles high-speed component registration, retrieval, and entity destruction.
+	</description>
+	<tutorials>
+		<link title="ECS Core Handbook - Vol 0: Getting Started">https://github.com/Team-Diospa/customized-godot/blob/main/modules/ecs_core/HANDBOOK.md</link>
+	</tutorials>
+	<methods>
+		<method name="create_entity">
+			<return type="int" />
+			<description>
+				Spawns a new entity and returns its unique 64-bit ID.
+			</description>
+		</method>
+		<method name="destroy_entity">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Immediately destroys the entity and all its components.
+			</description>
+		</method>
+		<method name="is_entity_valid" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Returns [code]true[/code] if the entity ID is alive and matches the current generation.
+			</description>
+		</method>
+		<method name="get_active_entity_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the total number of currently alive entities.
+			</description>
+		</method>
+		<method name="add_component_untyped">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<param index="1" name="component_name" type="StringName" />
+			<param index="2" name="data" type="Variant" />
+			<description>
+				Adds a component to the entity from GDScript.
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="BIT_TRANSFORM" value="1" enum="ComponentBit">
+			Bitmask for 3D Transform components.
+		</constant>
+		<constant name="BIT_AUDIO" value="64" enum="ComponentBit">
+			Bitmask for Audio components.
+		</constant>
+	</constants>
+</class>

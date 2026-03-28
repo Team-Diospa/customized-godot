@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ECSSerializer" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Handles binary persistence and networking snapshots for the ECS.
+	</brief_description>
+	<description>
+		[ECSSerializer] provides methods to save and load the entire world state to disk, and to capture high-frequency snapshots for networked multiplayer.
+	</description>
+	<methods>
+		<method name="save_world">
+			<return type="int" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Saves the current world state to a binary file.
+			</description>
+		</method>
+		<method name="load_world">
+			<return type="int" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Loads a world state from a binary file, replacing the current simulation.
+			</description>
+		</method>
+		<method name="capture_snapshot_binary">
+			<return type="PackedByteArray" />
+			<description>
+				Returns a compact binary delta of the current simulation state.
+			</description>
+		</method>
+	</methods>
+</class>

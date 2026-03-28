@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ECSPrefabBridge" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Translation layer between Godot Scenes and ECS Entities.
+	</brief_description>
+	<description>
+		[ECSPrefabBridge] parses [PackedScene] resources and translates their node hierarchies into optimized ECS entity bundles, facilitating easy spawning of complex objects.
+	</description>
+	<methods>
+		<method name="spawn_from_scene">
+			<return type="int" />
+			<param index="0" name="scene" type="PackedScene" />
+			<param index="1" name="parent" type="int" default="0" />
+			<description>
+				Spawns an entity from a scene file and optionally attaches it to a parent entity.
+			</description>
+		</method>
+	</methods>
+</class>

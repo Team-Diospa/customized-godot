@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ECSQuery" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		High-performance entity filtering DSL.
+	</brief_description>
+	<description>
+		[ECSQuery] allows for defining complex filters to retrieve specific subsets of entities based on their component masks.
+	</description>
+	<methods>
+		<method name="create" qualifiers="static">
+			<return type="ECSQuery" />
+			<description>
+				Creates a new query object.
+			</description>
+		</method>
+		<method name="with_component">
+			<return type="ECSQuery" />
+			<param index="0" name="bit" type="int" />
+			<description>
+				Adds a requirement that the entity MUST have the specified component bit.
+			</description>
+		</method>
+		<method name="without_component">
+			<return type="ECSQuery" />
+			<param index="0" name="bit" type="int" />
+			<description>
+				Adds a requirement that the entity MUST NOT have the specified component bit.
+			</description>
+		</method>
+		<method name="execute">
+			<return type="Array" />
+			<description>
+				Performs the join and returns an array of matching entity IDs.
+			</description>
+		</method>
+	</methods>
+</class>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ECSEntityProxy" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		High-level Variant wrapper for a raw ECS Entity.
+	</brief_description>
+	<description>
+		[ECSEntityProxy] allows GDScript to interact with ECS entities through Godot's standard property system. It provides a bridge between low-level DOD (Data Oriented Design) and high-level scripting.
+	</description>
+	<methods>
+		<method name="set_entity">
+			<return type="void" />
+			<param index="0" name="entity_id" type="int" />
+			<description>
+				Binds this proxy to a specific 64-bit entity ID.
+			</description>
+		</method>
+		<method name="get_entity" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the current entity ID this proxy represents.
+			</description>
+		</method>
+		<method name="sync_telemetry">
+			<return type="void" />
+			<description>
+				Updates the proxy's internal state with real-time simulation data from the entity.
+			</description>
+		</method>
+	</methods>
+</class>
