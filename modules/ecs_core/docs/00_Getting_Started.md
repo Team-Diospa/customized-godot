@@ -20,6 +20,12 @@ Godot's standard `SceneTree` is a powerful, general-purpose tool, but its object
 | [Vol 4](file:///d:/Codes/customized-godot/modules/ecs_core/docs/04_Serialization_Persistence.md) | Serialization | Binary Format, ZStd & Delta |
 | [Vol 5](file:///d:/Codes/customized-godot/modules/ecs_core/docs/05_Presentation_Visuals.md) | Presentation & Visuals | MultiMesh, Audio & GPU |
 | [Vol 6](file:///d:/Codes/customized-godot/modules/ecs_core/docs/06_High_Performance_Math.md) | High-Performance Math | SIMD, AVX & Intrinsics |
+| [Vol 7](file:///d:/Codes/customized-godot/modules/ecs_core/docs/07_API_EntityManager.md) | API Reference | EntityManager |
+| [Vol 8](file:///d:/Codes/customized-godot/modules/ecs_core/docs/08_API_SparseSet_Query.md) | API Reference | SparseSet & Query |
+| [Vol 9](file:///d:/Codes/customized-godot/modules/ecs_core/docs/09_API_Scheduler_CommandBuffer.md) | API Reference | Scheduler & CommandBuffer |
+| [Vol 10](file:///d:/Codes/customized-godot/modules/ecs_core/docs/10_API_Bridges_Proxy.md) | API Reference | Bridges & EntityProxy |
+| [Vol 11](file:///d:/Codes/customized-godot/modules/ecs_core/docs/11_API_Serialization.md) | API Reference | Serialization & Persistence |
+| [Vol 12](file:///d:/Codes/customized-godot/modules/ecs_core/docs/12_API_Math_SIMD.md) | API Reference | High-Performance Math (SIMD) |
 
 ---
 

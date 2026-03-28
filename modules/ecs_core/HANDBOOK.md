@@ -27,6 +27,12 @@ For granular deep-dives, refer to the specialized volumes in the `docs/` directo
 | [Vol 4](docs/04_Serialization_Persistence.md) | Serialization | Binary Format, ZStd & Delta |
 | [Vol 5](docs/05_Presentation_Visuals.md) | Presentation & Visuals | MultiMesh, Audio & GPU |
 | [Vol 6](docs/06_High_Performance_Math.md) | High-Performance Math | SIMD, AVX & Intrinsics |
+| [Vol 7](docs/07_API_EntityManager.md) | API - EntityManager | Entity Lifecycle & ID Management |
+| [Vol 8](docs/08_API_SparseSet_Query.md) | API - SparseSet & Query | Data Access & Filtering |
+| [Vol 9](docs/09_API_Scheduler_CommandBuffer.md) | API - Scheduler & CommandBuffer | Execution & Threading |
+| [Vol 10](docs/10_API_Bridges_Proxy.md) | API - Bridges & EntityProxy | GDScript Interop |
+| [Vol 11](docs/11_API_Serialization.md) | API - Serialization & Persistence | Binary Formats |
+| [Vol 12](docs/12_API_Math_SIMD.md) | API - Math (SIMD) | Vectorized Math Kernels |
 
 ---
 
